@@ -1,0 +1,5 @@
+package Entities
+
+class Ant {
+
+}
