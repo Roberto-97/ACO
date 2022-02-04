@@ -1,40 +1,38 @@
 package Entities
 
+import scala.collection.immutable.ListMap
+import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
 
 object Tsp {
 
-  private val distance: Vector[Vector[Int]] = Vector.empty
+  private var name: String = null
+  var distance: Vector[Vector[Int]] = Vector.empty
+  private var optimun: Integer = null
+  var numberCities: Integer = null
+  private var numberNeighbors: Integer = null
+  var nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
+  private var nodeptr: Vector[Point] = Vector.empty
 
-  def computeNnList(nnLocalSearch: Int, nnAnts: Int, numberCities: Int): Vector[Vector[Int]] = {
+  def computeNearestNeighborsMatrix(): Unit = {
     var nn: Int = 0
-    var distanceVector: Vector[Int] = Vector.fill(numberCities)(0)
-    var helpVector: Vector[Int] = Vector.fill(numberCities)(0)
-    var mnNear: Vector[Vector[Int]] = Vector.empty
-    var mapCitiesNearest: Map[Int, Int] = Map.empty
     println("\n computing nearest neighbor lists,")
-    nn = nnLocalSearch.max(nnAnts)
+    nn = LocalSearch.depthNearestNeighbourList.toInt.max(Aco.lengthNeighborsList)
     if (nn >= numberCities)
       nn = numberCities -1
     require(numberCities > nn, "Number of cities must be mayor than depth of nearest ")
 
-    mnNear = Vector.fill(nn)(Vector.fill(nn)(0))
+    nearestNeighborsMatrix = Vector.fill(numberCities)(Vector.fill(nn)(Option.empty))
     var node = 0
 
     while (node < numberCities) {
-      (0 until numberCities).map(i => {
-        distanceVector = distanceVector.updated(i,distance(node)(i))
-        helpVector = helpVector.updated(i, i)
-        mapCitiesNearest += distance(node)(i) -> i
-      })
-      distanceVector = distanceVector.updated(node, Int.MaxValue)
-      distanceVector = distanceVector.sorted
-      helpVector = distanceVector.map(key => mapCitiesNearest.get(key).get)
-      mnNear = mnNear.updated(node, (0 until nn).map(i => helpVector(i)).toVector)
+      var auxVector = (0 until numberCities).map(i => (i, distance(node)(i))).toVector
+      auxVector = auxVector.updated(node, (node, Int.MaxValue))
+      val nearestCities = auxVector.sortBy(_._2).map(t => Option(t._1))
+      nearestNeighborsMatrix = nearestNeighborsMatrix.updated(node, (0 to nn - 1).map(i => nearestCities(i)).toVector)
       node+=1
     }
     println("\n ..done\n")
-    mnNear
   }
 
 }
