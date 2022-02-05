@@ -17,4 +17,5 @@ object Main {
     println("\n Resultado final: " + Tsp.nearestNeighborsMatrix)
   }
 
+
 }

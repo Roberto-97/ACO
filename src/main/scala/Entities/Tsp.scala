@@ -35,4 +35,10 @@ object Tsp {
     println("\n ..done\n")
   }
 
+  def computeTourLength(tour: Vector[Option[Integer]]): Int = {
+    (0 until numberCities)
+      .map((city) => distance(tour(city).get)(tour(city + 1).get))
+      .reduce((distancex, distancey) => distancex + distancey)
+  }
+
 }
