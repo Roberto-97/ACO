@@ -2,10 +2,14 @@ package Main
 
 
 import Entities.{Aco, Ant, LocalSearch, Tsp}
+import Util.Conf
 import Util.Timer.{elapsedTime, startTimer}
 
 object Main {
   def main(args: Array[String]): Unit = {
+    val conf = new Conf(args)
+    val ep = conf.build
+    println("Sistem parameters " + ep)
     LocalSearch.depthNearestNeighbourList = 2
     Aco.lengthNeighborsList = 4
     Tsp.numberCities = 4
@@ -13,8 +17,7 @@ object Main {
     startTimer()
     Tsp.computeNearestNeighborsMatrix()
     val time_used = elapsedTime()
-    println("\n Resultado en un tiempo de :" + time_used + " ms")
-    println("\n Resultado final: " + Tsp.nearestNeighborsMatrix)
+
   }
 
 

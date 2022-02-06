@@ -1,5 +1,7 @@
 package Entities
 
+import Entities.DistanceStrategies.DistanceStrategies
+
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -12,7 +14,9 @@ object Tsp {
   var numberCities: Integer = null
   private var numberNeighbors: Integer = null
   var nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
-  private var nodeptr: Vector[Point] = Vector.empty
+  val nodeptr: Vector[Point] = Vector.empty
+  val distanceStrategy: DistanceStrategies = null
+
 
   def computeNearestNeighborsMatrix(): Unit = {
     var nn: Int = 0
@@ -28,7 +32,9 @@ object Tsp {
     while (node < numberCities) {
       var auxVector = (0 until numberCities).map(i => (i, distance(node)(i))).toVector
       auxVector = auxVector.updated(node, (node, Int.MaxValue))
-      val nearestCities = auxVector.sortBy(_._2).map(t => Option(t._1))
+      val nearestCities = auxVector
+        .sortBy(_._2)
+        .map(t => Option(t._1))
       nearestNeighborsMatrix = nearestNeighborsMatrix.updated(node, (0 to nn - 1).map(i => nearestCities(i)).toVector)
       node+=1
     }
@@ -40,5 +46,13 @@ object Tsp {
       .map((city) => distance(tour(city).get)(tour(city + 1).get))
       .reduce((distancex, distancey) => distancex + distancey)
   }
+
+  def computeDistances(): Unit = {
+    distance = Vector.fill(numberCities)(Vector.fill(numberCities)(0))
+    distance = (0 until numberCities)
+      .map((i) => (0 until numberCities)
+      .map((j) => distanceStrategy.computeDistance(i, j)).toVector).toVector
+  }
+
 
 }
