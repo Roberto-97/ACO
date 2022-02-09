@@ -14,8 +14,19 @@ object Tsp {
   var numberCities: Integer = null
   private var numberNeighbors: Integer = null
   var nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
-  val nodeptr: Vector[Point] = Vector.empty
-  val distanceStrategy: DistanceStrategies = null
+  var nodeptr: Vector[Point] = Vector.empty
+  var distanceStrategy: DistanceStrategies = null
+
+  def initializeTspParams(name: String, numberCities: Integer, distanceStrategy: DistanceStrategies): Unit = {
+    this.name = name
+    this.numberCities = numberCities
+    this.distanceStrategy = distanceStrategy
+    this.nodeptr = Vector.fill(numberCities)(null)
+  }
+
+  def setNodeCordSection(i: Double, j: Double, pos: Int): Unit = {
+    nodeptr = nodeptr.updated(pos, Point(i, j))
+  }
 
 
   def computeNearestNeighborsMatrix(): Unit = {
