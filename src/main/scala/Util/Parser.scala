@@ -1,10 +1,11 @@
 package Util
 
 import Entities.DistanceStrategies.DistanceStrategies
-import Entities.DistanceStrategies.{ RoundDistance, CeilDistance, GeoDistance, AttDistance }
+import Entities.DistanceStrategies.{AttDistance, CeilDistance, GeoDistance, RoundDistance}
+import Entities.ExecutionParameters
 
 import scala.io.Source
-import Entities.Tsp.{ initializeTspParams, setNodeCordSection }
+import Entities.Tsp.{computeDistances, initializeTspParams, numberCities, setNodeCordSection}
 
 object Parser {
 
@@ -40,7 +41,46 @@ object Parser {
       setNodePtr(lines)
     } catch {
       case x: Exception =>
-        println("\n Error reading file "+ filename + "...")
+        println("\nError reading file "+ filename + "...")
     }
+  }
+
+
+  def printParameters(ep: ExecutionParameters): Unit = {
+    println("maxTries -> " + ep.maxTries)
+    println("maxTours -> " + ep.maxTours)
+    println("maxTime -> " + ep.maxTime)
+    println("optimum -> " + ep.optimal)
+    println("nAnts -> " + ep.nAnts)
+    println("nnAnts -> " + ep.nnAnts)
+    println("alpha -> " + ep.alpha)
+    println("beta -> " + ep.beta)
+    println("rho -> " + ep.rho)
+    println("q0 -> " + ep.q0)
+    println("elitistAnts -> " + ep.elitistRanks)
+    println("rasRanks -> " + ep.rasRanks)
+    println("lsFlag -> " + ep.lsFlag)
+    println("nnLs -> " + ep.nnLs)
+    println("dlbFlag -> " + ep.dlbFlag)
+    println("asFlag -> " + ep.asFlag)
+    println("easFlag -> " + ep.easFlag)
+    println("rasFlag -> " + ep.rasFlag)
+    println("mmasFlag -> " + ep.mmasFlag)
+    println("bwasFlag -> " + ep.bwasFlag)
+    println("acsFlag -> " + ep.acsFlag)
+  }
+
+  def initProgram(ep: ExecutionParameters): Unit = {
+    readEtsp(ep.tsplibfile)
+    if (ep.nAnts < 0)
+      ep.nAnts = numberCities
+    if (ep.easFlag != 0 && ep.elitistRanks <= 0)
+      ep.elitistRanks = numberCities
+    ep.nnLs = (numberCities - 1).min(ep.nnLs)
+
+    println("\nCalculating distance matrix .. \n\n")
+    computeDistances()
+    println("\n..done\n")
+    printParameters(ep)
   }
 }
