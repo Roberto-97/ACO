@@ -32,115 +32,114 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
   val tsplibfile = opt[String](required = true)
   verify()
 
-  def setDefaultAsParameters(ep: ExecutionParameters): Unit = {
-    if (ep.asFlag != 0) {
-      ep.nAnts = numberAnts.getOrElse(-1)
-      ep.nnAnts = numberNeighboursAnts.getOrElse(20)
-      ep.alpha = alpha.getOrElse(1.0)
-      ep.beta = beta.getOrElse(2.0)
-      ep.rho = rho.getOrElse(0.5)
-      ep.q0 = q0.getOrElse(0.0)
-      ep.rasRanks = rasRanks.getOrElse(0)
-      ep.elitistRanks = elitistAnts.getOrElse(0)
+  def setDefaultAsParameters(): Unit = {
+    if (ExecutionParameters.asFlag != 0) {
+      ExecutionParameters.nAnts = numberAnts.getOrElse(-1)
+      ExecutionParameters.nnAnts = numberNeighboursAnts.getOrElse(20)
+      ExecutionParameters.alpha = alpha.getOrElse(1.0)
+      ExecutionParameters.beta = beta.getOrElse(2.0)
+      ExecutionParameters.rho = rho.getOrElse(0.5)
+      ExecutionParameters.q0 = q0.getOrElse(0.0)
+      ExecutionParameters.rasRanks = rasRanks.getOrElse(0)
+      ExecutionParameters.elitistsAnts = elitistAnts.getOrElse(0)
     }
   }
 
-  def setDefaulEasParameters(ep: ExecutionParameters): Unit = {
-    if (ep.easFlag != 0) {
-      ep.nAnts = numberAnts.getOrElse(-1)
-      ep.nnAnts = numberNeighboursAnts.getOrElse(20)
-      ep.alpha = alpha.getOrElse(1.0)
-      ep.beta = beta.getOrElse(2.0)
-      ep.rho = rho.getOrElse(0.5)
-      ep.q0 = q0.getOrElse(0.0)
-      ep.rasRanks = rasRanks.getOrElse(0)
-      ep.elitistRanks = elitistAnts.getOrElse(ep.nnAnts)
+  def setDefaulEasParameters(): Unit = {
+    if (ExecutionParameters.easFlag != 0) {
+      ExecutionParameters.nAnts = numberAnts.getOrElse(-1)
+      ExecutionParameters.nnAnts = numberNeighboursAnts.getOrElse(20)
+      ExecutionParameters.alpha = alpha.getOrElse(1.0)
+      ExecutionParameters.beta = beta.getOrElse(2.0)
+      ExecutionParameters.rho = rho.getOrElse(0.5)
+      ExecutionParameters.q0 = q0.getOrElse(0.0)
+      ExecutionParameters.rasRanks = rasRanks.getOrElse(0)
+      ExecutionParameters.elitistsAnts = elitistAnts.getOrElse(ExecutionParameters.nnAnts)
     }
   }
 
-  def setDefaulRasParameters(ep: ExecutionParameters): Unit = {
-    if (ep.rasFlag != 0) {
-      ep.nAnts = numberAnts.getOrElse(-1)
-      ep.nnAnts = numberNeighboursAnts.getOrElse(20)
-      ep.alpha = alpha.getOrElse(1.0)
-      ep.beta = beta.getOrElse(2.0)
-      ep.rho = rho.getOrElse(0.1)
-      ep.q0 = q0.getOrElse(0.0)
-      ep.rasRanks = rasRanks.getOrElse(6)
-      ep.elitistRanks = elitistAnts.getOrElse(0)
+  def setDefaulRasParameters(): Unit = {
+    if (ExecutionParameters.rasFlag != 0) {
+      ExecutionParameters.nAnts = numberAnts.getOrElse(-1)
+      ExecutionParameters.nnAnts = numberNeighboursAnts.getOrElse(20)
+      ExecutionParameters.alpha = alpha.getOrElse(1.0)
+      ExecutionParameters.beta = beta.getOrElse(2.0)
+      ExecutionParameters.rho = rho.getOrElse(0.1)
+      ExecutionParameters.q0 = q0.getOrElse(0.0)
+      ExecutionParameters.rasRanks = rasRanks.getOrElse(6)
+      ExecutionParameters.elitistsAnts = elitistAnts.getOrElse(0)
     }
   }
 
-  def setDefaultMmasParameters(ep: ExecutionParameters): Unit = {
-    if (ep.mmasFlag != 0) {
-      ep.nAnts = numberAnts.getOrElse(-1)
-      ep.nnAnts = numberNeighboursAnts.getOrElse(20)
-      ep.alpha = alpha.getOrElse(1.0)
-      ep.beta = beta.getOrElse(2.0)
-      ep.rho = rho.getOrElse(0.02)
-      ep.q0 = q0.getOrElse(0.0)
-      ep.rasRanks = rasRanks.getOrElse(0)
-      ep.elitistRanks = elitistAnts.getOrElse(0)
+  def setDefaultMmasParameters(): Unit = {
+    if (ExecutionParameters.mmasFlag != 0) {
+      ExecutionParameters.nAnts = numberAnts.getOrElse(-1)
+      ExecutionParameters.nnAnts = numberNeighboursAnts.getOrElse(20)
+      ExecutionParameters.alpha = alpha.getOrElse(1.0)
+      ExecutionParameters.beta = beta.getOrElse(2.0)
+      ExecutionParameters.rho = rho.getOrElse(0.02)
+      ExecutionParameters.q0 = q0.getOrElse(0.0)
+      ExecutionParameters.rasRanks = rasRanks.getOrElse(0)
+      ExecutionParameters.elitistsAnts = elitistAnts.getOrElse(0)
     }
   }
 
-  def setDefaultAcsParameters(ep: ExecutionParameters): Unit = {
-    if (ep.acsFlag != 0) {
-      ep.nAnts = numberAnts.getOrElse(10)
-      ep.nnAnts = numberNeighboursAnts.getOrElse(20)
-      ep.alpha = alpha.getOrElse(1.0)
-      ep.beta = beta.getOrElse(2.0)
-      ep.rho = rho.getOrElse(0.1)
-      ep.q0 = q0.getOrElse(0.9)
-      ep.rasRanks = rasRanks.getOrElse(0)
-      ep.elitistRanks = elitistAnts.getOrElse(0)
+  def setDefaultAcsParameters(): Unit = {
+    if (ExecutionParameters.acsFlag != 0) {
+      ExecutionParameters.nAnts = numberAnts.getOrElse(10)
+      ExecutionParameters.nnAnts = numberNeighboursAnts.getOrElse(20)
+      ExecutionParameters.alpha = alpha.getOrElse(1.0)
+      ExecutionParameters.beta = beta.getOrElse(2.0)
+      ExecutionParameters.rho = rho.getOrElse(0.1)
+      ExecutionParameters.q0 = q0.getOrElse(0.9)
+      ExecutionParameters.rasRanks = rasRanks.getOrElse(0)
+      ExecutionParameters.elitistsAnts = elitistAnts.getOrElse(0)
     }
   }
 
-  def setDefaultLsParameters(ep: ExecutionParameters): Unit = {
+  def setDefaultLsParameters(): Unit = {
     val lsFlagValues = Vector(0,1,2,3)
-    if (lsFlagValues.contains(ep.lsFlag)) {
-      ep.dlbFlag = 1
-      ep.nnLs = nnLs.getOrElse(20)
-      ep.nAnts = numberAnts.getOrElse(25)
-      ep.nnAnts = numberNeighboursAnts.getOrElse(20)
-      ep.alpha = alpha.getOrElse(1.0)
-      ep.beta = beta.getOrElse(2.0)
-      ep.rho = rho.getOrElse(0.5)
-      ep.q0 = q0.getOrElse(0.0)
-      if (ep.mmasFlag != 0) {
-        ep.nAnts = numberAnts.getOrElse(25)
-        ep.rho = rho.getOrElse(0.2)
-        ep.q0 = q0.getOrElse(0.0)
-      } else if (ep.acsFlag != 0) {
-        ep.nAnts = numberAnts.getOrElse(10)
-        ep.rho = rho.getOrElse(0.1)
-        ep.q0 = q0.getOrElse(0.98)
-      } else if (ep.easFlag != 0) {
-        ep.elitistRanks = elitistAnts.getOrElse(ep.nAnts)
+    if (lsFlagValues.contains(ExecutionParameters.lsFlag)) {
+      ExecutionParameters.dlbFlag = 1
+      ExecutionParameters.nnLs = nnLs.getOrElse(20)
+      ExecutionParameters.nAnts = numberAnts.getOrElse(25)
+      ExecutionParameters.nnAnts = numberNeighboursAnts.getOrElse(20)
+      ExecutionParameters.alpha = alpha.getOrElse(1.0)
+      ExecutionParameters.beta = beta.getOrElse(2.0)
+      ExecutionParameters.rho = rho.getOrElse(0.5)
+      ExecutionParameters.q0 = q0.getOrElse(0.0)
+      if (ExecutionParameters.mmasFlag != 0) {
+        ExecutionParameters.nAnts = numberAnts.getOrElse(25)
+        ExecutionParameters.rho = rho.getOrElse(0.2)
+        ExecutionParameters.q0 = q0.getOrElse(0.0)
+      } else if (ExecutionParameters.acsFlag != 0) {
+        ExecutionParameters.nAnts = numberAnts.getOrElse(10)
+        ExecutionParameters.rho = rho.getOrElse(0.1)
+        ExecutionParameters.q0 = q0.getOrElse(0.98)
+      } else if (ExecutionParameters.easFlag != 0) {
+        ExecutionParameters.elitistsAnts = elitistAnts.getOrElse(ExecutionParameters.nAnts)
       }
     }
   }
 
-  def setDefaultParameters(ep: ExecutionParameters): ExecutionParameters = {
-    setDefaultAsParameters(ep)
-    setDefaulEasParameters(ep)
-    setDefaulRasParameters(ep)
-    setDefaultMmasParameters(ep)
-    setDefaultAcsParameters(ep)
-    setDefaultLsParameters(ep)
-    ep
+  def setDefaultParameters(): Unit = {
+    setDefaultAsParameters()
+    setDefaulEasParameters()
+    setDefaulRasParameters()
+    setDefaultMmasParameters()
+    setDefaultAcsParameters()
+    setDefaultLsParameters()
   }
 
-  def build: ExecutionParameters = {
-    val ep = ExecutionParameters(lsFlag.getOrElse(3), nnLs.getOrElse(20),
+  def build: Unit = {
+      ExecutionParameters.init(lsFlag.getOrElse(3), nnLs.getOrElse(20),
       numberAnts.getOrElse(25), numberNeighboursAnts.getOrElse(20), rho.getOrElse(0.5),
       alpha.getOrElse(1.0), beta.getOrElse(2.0), q0.getOrElse(0.0), maxTries.getOrElse(10),
       maxTours.getOrElse(0), maxTime.getOrElse(10.0), optimal.getOrElse(1), asFlag.getOrElse(0), dlbFlag.getOrElse(1),
       easFlag.getOrElse(0), rasFlag.getOrElse(0), mmasFlag.getOrElse(1), bwasFlag.getOrElse(0), acsFlag.getOrElse(0),
       trailMax.getOrElse(0), trailMix.getOrElse(0), ugb.getOrElse(Int.MaxValue),
       trail0.getOrElse(0.0), rasRanks.getOrElse(0), elitistAnts.getOrElse(0), tsplibfile.apply())
-      setDefaultParameters(ep)
+      setDefaultParameters()
   }
 
 

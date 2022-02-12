@@ -1,8 +1,8 @@
 package Entities
 
 import scala.beans.BeanProperty
-import Entities.Tsp.{computeTourLength, nearestNeighborsMatrix, numberCities}
-import Entities.Aco.{lengthNeighborsList, probOfSelection, q0, total}
+import Entities.Tsp.{computeTourLength, distance, nearestNeighborsMatrix, numberCities}
+import Entities.Aco.{probOfSelection, total}
 
 import scala.util.Random
 
@@ -51,7 +51,7 @@ class Ant{
       partialSum += probPtr(i)
     }
 
-    if (i == lengthNeighborsList) {
+    if (i == ExecutionParameters.nnAnts) {
       return neighbourChooseBestNext(step)
     }
     val help = nearestNeighborsMatrix(currentCity)(i).get
@@ -87,7 +87,7 @@ class Ant{
     var nextCity = numberCities
     val currentCity = _tour(step - 1).get
     var valueBest = -1.0
-    (0 until lengthNeighborsList).map((i) => {
+    (0 until ExecutionParameters.nnAnts).map((i) => {
       val helpCity = nearestNeighborsMatrix(currentCity)(i).get
       if (!_visited(helpCity)) {
         val help = total(currentCity)(helpCity)
@@ -114,13 +114,13 @@ class Ant{
     var sumProb = 0.0
     var probPtr = probOfSelection
 
-    if ((q0 > 0.0) && (new Random().nextDouble() < q0)) {
+    if ((ExecutionParameters.q0 > 0.0) && (new Random().nextDouble() < ExecutionParameters.q0)) {
       /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
       return neighbourChooseBestNext(step)
     }
 
     val currentCity = _tour(step - 1).get
-    (0 until lengthNeighborsList).map((i) => {
+    (0 until ExecutionParameters.nnAnts).map((i) => {
       if (_visited(nearestNeighborsMatrix(currentCity)(i).get)){
         probPtr = probPtr.updated(i, 0.0) /* City already visited */
       } else {
@@ -136,6 +136,22 @@ class Ant{
       /*At least one neighbor is eligible, chose one according to the selection probabilities*/
       calculateProb(sumProb, probPtr, step, currentCity)
     }
+  }
+
+  def chooseClosestNext(step: Int): Ant = {
+    var nextCity = numberCities
+    val currentCity = tour(step - 1)
+    var minDistance = Int.MaxValue
+    (0 until numberCities).map((city) => {
+      if (!_visited(city)) {
+        if (distance(currentCity.get)(city) < minDistance) {
+          nextCity = city
+          minDistance = distance(currentCity.get)(city)
+        }
+      }
+    })
+    updateTour(step, nextCity)
+    this
   }
   
   def computeTour(): Ant = {

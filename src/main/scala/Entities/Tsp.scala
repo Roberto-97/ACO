@@ -10,9 +10,7 @@ object Tsp {
 
   private var name: String = null
   var distance: Vector[Vector[Int]] = Vector.empty
-  private var optimun: Integer = null
   var numberCities: Integer = null
-  private var numberNeighbors: Integer = null
   var nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
   var nodeptr: Vector[Point] = Vector.empty
   var distanceStrategy: DistanceStrategies = null
@@ -32,7 +30,7 @@ object Tsp {
   def computeNearestNeighborsMatrix(): Unit = {
     var nn: Int = 0
     println("\n computing nearest neighbor lists,")
-    nn = LocalSearch.depthNearestNeighbourList.toInt.max(Aco.lengthNeighborsList)
+    nn = ExecutionParameters.nnLs.max(ExecutionParameters.nnAnts)
     if (nn >= numberCities)
       nn = numberCities -1
     require(numberCities > nn, "Number of cities must be mayor than depth of nearest ")
