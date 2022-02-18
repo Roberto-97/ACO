@@ -12,27 +12,7 @@ object InOut {
   private val NAME_KEY = "NAME:"
   private val DIMENSION_KEY  = "DIMENSION:"
   private val EDGE_WEIGHT_TYPE = "EDGE_WEIGHT_TYPE:"
-  private var _nTry: Int = 0
-  var _nTours: Int = 0
-  private var _iteration: Int = 0
-  private var _restartIteration: Int = 0
-  private var _restartTime: Double = 0.0
-  private var _maxTries: Int = 0
-  private var _maxTours: Int = 0
-  private var _lambda: Double = 0.0
-  private var _foundBest: Int = 0
 
-  def initTry(): Unit = {
-    _nTours = 1
-    _iteration = 1
-    _restartIteration = 1
-    _lambda = 0.05
-    Aco._bestSoFarAnt.tourLength = Int.MaxValue
-    _foundBest = 0
-    if (!(ExecutionParameters.acsFlag != 0  || ExecutionParameters.mmasFlag != 0 || ExecutionParameters.bwasFlag != 0)) {
-      ExecutionParameters.trail0 = 1. / (ExecutionParameters.rho * Aco.nnTour())
-    }
-  }
 
   def selectDistance(edgeWeightType: String): DistanceStrategies = {
     edgeWeightType match {

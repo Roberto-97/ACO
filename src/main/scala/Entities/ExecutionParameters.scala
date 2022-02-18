@@ -20,8 +20,8 @@ object ExecutionParameters {
   var mmasFlag: Int = 0
   var bwasFlag: Int = 0
   var acsFlag: Int = 0
-  var trailMax: Int = 0
-  var trailMin: Int = 0
+  var trailMax: Double = 0
+  var trailMin: Double = 0
   var ugb: Int = 0
   var trail0: Double = 0
   var rasRanks: Int = 0

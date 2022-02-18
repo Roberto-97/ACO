@@ -8,9 +8,6 @@ import Util.InOut.initProgram
 
 object Main {
 
-  def initTry(): Unit = {
-
-  }
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
@@ -21,7 +18,15 @@ object Main {
     val time_used = elapsedTime()
     println("\nInitialization took " + time_used + " seconds\n")
     (0 to  ExecutionParameters.maxTries).map((nTry) => {
+      Tsp.initTry()
+      while (!Aco.terminationCondition()){
+        Aco.constructSolutions()
+        if (ExecutionParameters.lsFlag != 0) {
+          /* TODO: Local search */
+        }
+        Aco.updateStatistics()
 
+      }
     })
 
   }

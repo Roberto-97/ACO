@@ -1,5 +1,6 @@
 package Entities
 
+import Entities.Aco.{_bestSoFarAnt, computeTotalInformation, initPheromoneTrails, nnTour}
 import Entities.DistanceStrategies.DistanceStrategies
 
 import scala.collection.immutable.ListMap
@@ -14,6 +15,15 @@ object Tsp {
   var nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
   var nodeptr: Vector[Point] = Vector.empty
   var distanceStrategy: DistanceStrategies = null
+  private var _nTry: Int = 0
+  var _nTours: Int = 0
+  var _iteration: Int = 0
+  var _restartIteration: Int = 0
+  private var _restartTime: Double = 0.0
+  private var _maxTries: Int = 0
+  private var _maxTours: Int = 0
+  private var _lambda: Double = 0.0
+  private var _foundBest: Int = 0
 
   def initializeTspParams(name: String, numberCities: Integer, distanceStrategy: DistanceStrategies): Unit = {
     this.name = name
@@ -26,6 +36,9 @@ object Tsp {
     nodeptr = nodeptr.updated(pos, Point(i, j))
   }
 
+  def heuristic(i: Int, j: Int): Double = {
+    1.0 / (distance(i)(j) + 0.1)
+  }
 
   def computeNearestNeighborsMatrix(): Unit = {
     var nn: Int = 0
@@ -61,6 +74,31 @@ object Tsp {
     distance = (0 until numberCities)
       .map((i) => (0 until numberCities)
       .map((j) => distanceStrategy.computeDistance(i, j)).toVector).toVector
+  }
+
+  def initTry(): Unit = {
+    var trail0 = ExecutionParameters.trail0
+    _nTours = 1
+    _iteration = 1
+    _restartIteration = 1
+    _lambda = 0.05
+    _bestSoFarAnt.tourLength = Int.MaxValue
+    _foundBest = 0
+    if (!(ExecutionParameters.acsFlag != 0  || ExecutionParameters.mmasFlag != 0 || ExecutionParameters.bwasFlag != 0)) {
+      ExecutionParameters.trail0 = 1. / (ExecutionParameters.rho * nnTour())
+      initPheromoneTrails(ExecutionParameters.trail0)
+    }
+
+    if (ExecutionParameters.bwasFlag != 0 || ExecutionParameters.acsFlag != 0) {
+      ExecutionParameters.trail0 = 1. / (numberCities * nnTour())
+      initPheromoneTrails(ExecutionParameters.trail0)
+    }
+
+    if (ExecutionParameters.mmasFlag != 0) {
+      ExecutionParameters.trailMax = 1.0 / (ExecutionParameters.rho * nnTour())
+      ExecutionParameters.trailMin = ExecutionParameters.trailMax / (2 * numberCities)
+    }
+    computeTotalInformation()
   }
 
 
