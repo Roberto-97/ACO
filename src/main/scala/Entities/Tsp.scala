@@ -15,15 +15,7 @@ object Tsp {
   var nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
   var nodeptr: Vector[Point] = Vector.empty
   var distanceStrategy: DistanceStrategies = null
-  private var _nTry: Int = 0
-  var _nTours: Int = 0
-  var _iteration: Int = 0
-  var _restartIteration: Int = 0
-  private var _restartTime: Double = 0.0
-  private var _maxTries: Int = 0
-  private var _maxTours: Int = 0
-  private var _lambda: Double = 0.0
-  private var _foundBest: Int = 0
+  
 
   def initializeTspParams(name: String, numberCities: Integer, distanceStrategy: DistanceStrategies): Unit = {
     this.name = name
@@ -42,7 +34,7 @@ object Tsp {
 
   def computeNearestNeighborsMatrix(): Unit = {
     var nn: Int = 0
-    println("\n computing nearest neighbor lists,")
+    println("Computing nearest neighbor lists ..")
     nn = ExecutionParameters.nnLs.max(ExecutionParameters.nnAnts)
     if (nn >= numberCities)
       nn = numberCities -1
@@ -60,11 +52,11 @@ object Tsp {
       nearestNeighborsMatrix = nearestNeighborsMatrix.updated(node, (0 to nn - 1).map(i => nearestCities(i)).toVector)
       node+=1
     }
-    println("\n ..done\n")
+    println("done ..")
   }
 
   def computeTourLength(tour: Vector[Option[Integer]]): Int = {
-    (0 until numberCities)
+    (0 until numberCities - 1)
       .map((city) => distance(tour(city).get)(tour(city + 1).get))
       .reduce((distancex, distancey) => distancex + distancey)
   }
@@ -75,31 +67,5 @@ object Tsp {
       .map((i) => (0 until numberCities)
       .map((j) => distanceStrategy.computeDistance(i, j)).toVector).toVector
   }
-
-  def initTry(): Unit = {
-    var trail0 = ExecutionParameters.trail0
-    _nTours = 1
-    _iteration = 1
-    _restartIteration = 1
-    _lambda = 0.05
-    _bestSoFarAnt.tourLength = Int.MaxValue
-    _foundBest = 0
-    if (!(ExecutionParameters.acsFlag != 0  || ExecutionParameters.mmasFlag != 0 || ExecutionParameters.bwasFlag != 0)) {
-      ExecutionParameters.trail0 = 1. / (ExecutionParameters.rho * nnTour())
-      initPheromoneTrails(ExecutionParameters.trail0)
-    }
-
-    if (ExecutionParameters.bwasFlag != 0 || ExecutionParameters.acsFlag != 0) {
-      ExecutionParameters.trail0 = 1. / (numberCities * nnTour())
-      initPheromoneTrails(ExecutionParameters.trail0)
-    }
-
-    if (ExecutionParameters.mmasFlag != 0) {
-      ExecutionParameters.trailMax = 1.0 / (ExecutionParameters.rho * nnTour())
-      ExecutionParameters.trailMin = ExecutionParameters.trailMax / (2 * numberCities)
-    }
-    computeTotalInformation()
-  }
-
 
 }

@@ -14,12 +14,7 @@ object ExecutionParameters {
   var maxTime: Double = 0
   var optimal: Int = 0
   var asFlag: Int = 0
-  var dlbFlag: Int = 0
-  var easFlag: Int = 0
-  var rasFlag: Int = 0
   var mmasFlag: Int = 0
-  var bwasFlag: Int = 0
-  var acsFlag: Int = 0
   var trailMax: Double = 0
   var trailMin: Double = 0
   var ugb: Int = 0
@@ -29,9 +24,8 @@ object ExecutionParameters {
   var tsplibfile: String  = null
 
   def init(lsFlag: Int, nnLs: Int, nAnts: Int, nnAnts: Int, rho: Double, alpha: Double, beta: Double, q0: Double,
-           maxTries: Int, maxTours: Int, maxTime: Double, optimal: Int, asFlag: Int, dlbFlag: Int, easFlag: Int, rasFlag: Int,
-           mmasFlag: Int, bwasFlag: Int, acsFlag: Int, trailMax: Int, trailMin: Int, ugb: Int, trail0: Double, rasRanks: Int,
-           elitistsAnts: Int, tsplibfile: String): Unit = {
+           maxTries: Int, maxTours: Int, maxTime: Double, optimal: Int, asFlag: Int, mmasFlag: Int, trailMax: Int,
+           trailMin: Int, ugb: Int, trail0: Double, rasRanks: Int, elitistsAnts: Int, tsplibfile: String): Unit = {
     this.lsFlag = lsFlag
     this.nnLs = nnLs
     this.nAnts = nAnts
@@ -45,12 +39,7 @@ object ExecutionParameters {
     this.maxTime = maxTime
     this.optimal = optimal
     this.asFlag = asFlag
-    this.dlbFlag = dlbFlag
-    this.easFlag = easFlag
-    this.rasFlag = rasFlag
     this.mmasFlag = mmasFlag
-    this.bwasFlag = bwasFlag
-    this.acsFlag = acsFlag
     this.trailMax = trailMax
     this.trailMin = trailMin
     this.ugb = ugb

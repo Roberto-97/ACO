@@ -1,8 +1,11 @@
 package Entities
 
-import Entities.Tsp.{_iteration, _nTours, numberCities}
+import Entities.Tsp.{computeTourLength, numberCities}
+import Util.InOut.{_iteration, _lambda, _nTours, _restartIteration, _restartTime, nodeBranching}
+import Util.Timer.elapsedTime
 
 import scala.beans.BeanProperty
+import scala.language.postfixOps
 
 object Aco {
 
@@ -15,9 +18,12 @@ object Aco {
   private var _total: Vector[Vector[Double]] = Vector.empty
   private var _probOfSelection: Vector[Double] = Vector.empty
 
-  def init(numberAnts: Integer): Unit = {
-    _ants = Vector.fill(numberAnts)(new Ant)
+  def allocateAnts(): Unit = {
+    _ants = Vector.fill(ExecutionParameters.nnAnts)(new Ant)
     _bestSoFarAnt.initializeAnt()
+    _restartBestAnt.initializeAnt()
+    _probOfSelection = Vector.fill(ExecutionParameters.nnAnts + 1)(0.0)
+    _probOfSelection = _probOfSelection.updated(ExecutionParameters.nnAnts, Double.MaxValue)
   }
 
   def total = _total
@@ -47,10 +53,6 @@ object Aco {
     _ants = _ants.map(ant => ant.neighbourChooseAndMoveToNext(step))
   }
 
-  def chooseClosestNext(step: Int): Unit = {
-    _ants = _ants.map(ant => ant.chooseClosestNext(step))
-  }
-
   def computeTour(): Unit = {
     _ants = _ants.map(ant => ant.computeTour())
   }
@@ -68,21 +70,54 @@ object Aco {
   }
 
   def computeTotalInformation(): Unit = {
-    total = (0 to numberCities).map((i) =>
-      (0 to i).map((j) =>
-        Math.pow(pheremone(i)(j), ExecutionParameters.alpha) * Math.pow(Tsp.heuristic(i, j), ExecutionParameters.beta)).toVector)
-      .toVector
+    (0 until numberCities).map((i) =>
+      (0 until i).map((j) =>
+        total = total.updated(i, total(i).updated(j, Math.pow(pheremone(i)(j), ExecutionParameters.alpha) * Math.pow(Tsp.heuristic(i, j), ExecutionParameters.beta)))
+        total = total.updated(j, total(j).updated(i, total(i)(j)))
+        ))
+  }
+
+  def checkPheromoneTrailLimits(): Unit = {
+    (0 until numberCities).map((i) =>
+      (0 until i).map((j) => {
+        if (pheremone(i)(j) < ExecutionParameters.trailMin) {
+          pheremone = pheremone.updated(i, pheremone(i).updated(j, ExecutionParameters.trailMin))
+          pheremone = pheremone.updated(j, pheremone(j).updated(i, ExecutionParameters.trailMin))
+        } else if (pheremone(i)(j) > ExecutionParameters.trailMax) {
+          pheremone = pheremone.updated(i, pheremone(i).updated(j, ExecutionParameters.trailMax))
+          pheremone = pheremone.updated(j, pheremone(j).updated(i, ExecutionParameters.trailMax))
+        }
+      })
+    )
   }
 
   def nnTour(): Int = {
-    initializeAnts()
-    randomInitialPlaceAnt()
-    (1 until Tsp.numberCities - 1).map((step) => chooseClosestNext(step))
-    val step = Tsp.numberCities
-    //_ants(0) = _ants(0).tour.updated(Tsp.numberCities, _ants(0).tour(0))
+    _ants(0).initializeAnt()
+    _ants(0).randomInitialPlaceAnt()
+
+    (1 until Tsp.numberCities - 1).map((step) => {
+      _ants(0).chooseClosestNext(step)
+    })
+    _ants(0).tour = _ants(0).tour.updated(numberCities - 1, _ants(0).tour(0))
     if (ExecutionParameters.lsFlag != 0) {
+      /*TODO: twoOptFirst()*/
     }
-    0
+    _nTours += 1
+    _ants(0).tourLength = computeTourLength(_ants(0).tour)
+    val result = _ants(0).tourLength
+    _ants(0).initializeAnt()
+    result
+  }
+
+  def searchControlAndStatistics(): Unit = {
+    if (_iteration % 100 == 0) {
+      val branchingFactor = nodeBranching(_lambda)
+      _restartBestAnt.tourLength = Int.MaxValue
+      initPheromoneTrails(ExecutionParameters.trailMax)
+      computeTotalInformation()
+      _restartIteration = _iteration
+      _restartTime = elapsedTime()
+    }
   }
 
   def findBest(): Ant = {
@@ -132,52 +167,33 @@ object Aco {
     _ants.map(ant => globalUpdatePheremone(ant))
   }
 
-  def easUpdate(): Unit = {
-    _ants.map(ant => globalUpdatePheremone(ant, ExecutionParameters.elitistsAnts))
-  }
-
-  def bwasWorstAntUpdate(worstAnt: Ant, bestAnt: Ant): Unit = {
-    val pos2 = Vector.fill(numberCities)(0)
-  }
-
-  def rasUpdate(): Unit = {
-    var helpVector = _ants
-    (0 until ExecutionParameters.rasRanks - 1).map((i) => {
-      val antMin = helpVector.minByOption(ant => ant.tourLength)
-      if (!antMin.isEmpty) {
-        globalUpdatePheremone(antMin.get, ExecutionParameters.rasRanks - i - 1)
-        val index = helpVector.indexOf(antMin.get)
-        helpVector = helpVector.slice(0, index) ++ helpVector.drop(index + 1)
-      }
-    })
-    globalUpdatePheremone(_bestSoFarAnt, ExecutionParameters.rasRanks)
-  }
-
   def mmasUpdate(): Unit = {
-    if ((Tsp._iteration % ExecutionParameters.ugb) != 0) {
+    if ((_iteration % ExecutionParameters.ugb) != 0) {
       val bestAnt = findBest()
       globalUpdatePheremone(bestAnt)
     } else {
-      if (ExecutionParameters.ugb == 1 && (_iteration - Tsp._restartIteration)) globalUpdatePheremone(_bestSoFarAnt) else globalUpdatePheremone(_restartBestAnt)
+      if (ExecutionParameters.ugb == 1 && (_iteration - _restartIteration > 50)) globalUpdatePheremone(_bestSoFarAnt) else globalUpdatePheremone(_restartBestAnt)
     }
     ExecutionParameters.ugb = 25
   }
 
-  def bwasUpdate(): Unit = {
-    globalUpdatePheremone(_bestSoFarAnt)
-    val worstAnt = findWorst()
-
-
-  }
-
   def pheromoneTrailUpdate(): Unit = {
-    if (ExecutionParameters.asFlag != 0 || ExecutionParameters.easFlag != 0 || ExecutionParameters.rasFlag != 0 ||
-    ExecutionParameters.bwasFlag != 0 || ExecutionParameters.mmasFlag != 0) {
+    if (ExecutionParameters.asFlag != 0 || ExecutionParameters.mmasFlag != 0) {
       if (ExecutionParameters.lsFlag != 0) {
-        /*TODO: LocalSearc*/
+        /*TODO: LocalSearch*/
       } else {
         evaporation()
       }
+    }
+
+    if (ExecutionParameters.asFlag != 0) {
+      asUpdate()
+    } else if (ExecutionParameters.mmasFlag != 0){
+      mmasUpdate()
+    }
+
+    if (ExecutionParameters.asFlag != 0 || ExecutionParameters.mmasFlag != 0) {
+      computeTotalInformation()
     }
 
   }
