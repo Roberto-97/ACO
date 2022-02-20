@@ -4,7 +4,7 @@ package Main
 import Entities.{Aco, Ant, ExecutionParameters, LocalSearch, Tsp}
 import Util.Conf
 import Util.Timer.{elapsedTime, startTimer}
-import Util.InOut.{ initProgram, initTry, exitTry, _iteration }
+import Util.InOut.{ initProgram, initTry, exitTry, _iteration, exitProgram }
 
 object Main {
 
@@ -19,7 +19,13 @@ object Main {
     println("\nInitialization took " + time_used + " seconds\n")
     (0 until ExecutionParameters.maxTries).map(nTry => {
       initTry(nTry)
+      while (!Aco.terminationCondition()) {
+        Aco.constructSolutions()
+        Aco.updateStatistics()
+      }
+      exitTry(nTry)
     })
+    exitProgram()
 //    (0 to  ExecutionParameters.maxTries).map((nTry) => {
 //      initTry()
 //      while (!Aco.terminationCondition()){

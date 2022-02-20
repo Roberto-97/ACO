@@ -1,7 +1,8 @@
 package Entities
 
+import Entities.Aco.total
 import Entities.Tsp.{computeTourLength, numberCities}
-import Util.InOut.{_iteration, _lambda, _nTours, _restartIteration, _restartTime, nodeBranching}
+import Util.InOut.{_branchingFactor, _foundBest, _foundBranching, _iteration, _lambda, _nTours, _restartFoundBest, _restartIteration, _restartTime, _timeUsed, nodeBranching}
 import Util.Timer.elapsedTime
 
 import scala.beans.BeanProperty
@@ -14,25 +15,25 @@ object Aco {
   var _restartBestAnt: Ant = new Ant
 
 
-  private var _pheremone: Vector[Vector[Double]] = Vector.empty
-  private var _total: Vector[Vector[Double]] = Vector.empty
+  private var _pheremone: Array[Array[Double]] = Array.empty
+  private var _total: Array[Array[Double]] = Array.empty
   private var _probOfSelection: Vector[Double] = Vector.empty
 
   def allocateAnts(): Unit = {
-    _ants = Vector.fill(ExecutionParameters.nnAnts)(new Ant)
+    _ants = Vector.fill(ExecutionParameters.nAnts)(new Ant)
     _bestSoFarAnt.initializeAnt()
     _restartBestAnt.initializeAnt()
-    _probOfSelection = Vector.fill(ExecutionParameters.nnAnts + 1)(0.0)
-    _probOfSelection = _probOfSelection.updated(ExecutionParameters.nnAnts, Double.MaxValue)
+    _probOfSelection = Vector.fill(ExecutionParameters.nAnts + 1)(0.0)
+    _probOfSelection = _probOfSelection.updated(ExecutionParameters.nAnts, Double.MaxValue)
   }
 
   def total = _total
-  def total_=(total: Vector[Vector[Double]]) = {
+  def total_=(total: Array[Array[Double]]) = {
     _total = total
   }
 
   def pheremone = _pheremone
-  def pheremone_=(pheremone: Vector[Vector[Double]]) = {
+  def pheremone_=(pheremone: Array[Array[Double]]) = {
     _pheremone = pheremone
   }
 
@@ -58,23 +59,29 @@ object Aco {
   }
 
   def constructSolutions(): Unit = {
+    println("Construct solutions for all ants")
+    /* Mark all cities as unvisited*/
     initializeAnts()
+    /* Place the ants on same initial city*/
     randomInitialPlaceAnt()
     (1 until Tsp.numberCities - 1).map((step) => neighbourChooseAndMoveToNext(step))
     computeTour()
+    _nTours += ExecutionParameters.nAnts
   }
 
   def initPheromoneTrails(initialTrail: Double): Unit = {
-    pheremone = Vector.fill(numberCities)(Vector.fill(numberCities)(initialTrail))
-    total = Vector.fill(numberCities)(Vector.fill(numberCities)(initialTrail))
+    println("Init trails with " + initialTrail)
+    /* Initialize pheromone trails */
+    pheremone = Array.fill(numberCities)(Array.fill(numberCities)(initialTrail))
+    total = Array.fill(numberCities)(Array.fill(numberCities)(initialTrail))
   }
 
   def computeTotalInformation(): Unit = {
+    println("Compute total information")
     (0 until numberCities).map((i) =>
       (0 until i).map((j) =>
-        total = total.updated(i, total(i).updated(j, Math.pow(pheremone(i)(j), ExecutionParameters.alpha) * Math.pow(Tsp.heuristic(i, j), ExecutionParameters.beta)))
-        total = total.updated(j, total(j).updated(i, total(i)(j)))
-        ))
+        total(i)(j) = Math.pow(pheremone(i)(j), ExecutionParameters.alpha) * Math.pow(Tsp.heuristic(i, j), ExecutionParameters.beta)
+          total(j)(i) = total(i)(j)))
   }
 
   def checkPheromoneTrailLimits(): Unit = {
@@ -120,8 +127,16 @@ object Aco {
     }
   }
 
-  def findBest(): Ant = {
-    _ants.minBy(ant => ant.tourLength)
+  def findBest(): Int = {
+    var iter = 0
+    var min = _ants(0).tourLength
+    _ants.map(ant => {
+      if (ant.tourLength < min) {
+        min = ant.tourLength
+        iter = iter
+      }
+    })
+    iter
   }
 
   def findWorst(): Ant = {
@@ -129,19 +144,39 @@ object Aco {
   }
 
   def terminationCondition(): Boolean = {
-    _nTours >= ExecutionParameters.maxTours && _bestSoFarAnt.tourLength <= ExecutionParameters.optimal
+    _nTours >= ExecutionParameters.maxTours &&
+      (elapsedTime() >= ExecutionParameters.maxTime || _bestSoFarAnt.tourLength <= ExecutionParameters.optimal)
   }
 
   def updateStatistics(): Unit = {
-    var iterationBestAnt: Ant = null
-    val px: Double = 0.0
-    iterationBestAnt = findBest()
-    if (iterationBestAnt.tourLength < _bestSoFarAnt.tourLength) {
-      _bestSoFarAnt = iterationBestAnt
-      _restartBestAnt = iterationBestAnt
+    var iterationBestAntIter: Integer = null
+    iterationBestAntIter = findBest()
+    if (iterationBestAntIter < _bestSoFarAnt.tourLength) {
+      _timeUsed = elapsedTime()
+      _bestSoFarAnt = _ants(iterationBestAntIter)
+      _restartBestAnt = _ants(iterationBestAntIter)
+      _foundBest = _iteration
+      _restartFoundBest = _iteration
+      _foundBranching = nodeBranching(_lambda)
+      _branchingFactor = _foundBranching
+      if (ExecutionParameters.mmasFlag != 0) {
+        if (ExecutionParameters.lsFlag != 0) {
+          val px = Math.exp(Math.log(0.05)/numberCities)
+          ExecutionParameters.trailMin = 1.0 * (1 - px) / (px * ((ExecutionParameters.nnAnts + 1) / 2))
+          ExecutionParameters.trailMax = 1.0 / (ExecutionParameters.rho * _bestSoFarAnt.tourLength)
+          ExecutionParameters.trail0 = ExecutionParameters.trailMax
+          ExecutionParameters.trailMin = ExecutionParameters.trailMax * ExecutionParameters.trailMin
+        } else {
+          ExecutionParameters.trailMax = 1.0 / (ExecutionParameters.rho * _bestSoFarAnt.tourLength)
+          ExecutionParameters.trailMin = ExecutionParameters.trailMax / (2 * numberCities)
+          ExecutionParameters.trail0 = ExecutionParameters.trailMax
+        }
+      }
     }
-    if (iterationBestAnt.tourLength < _restartBestAnt.tourLength) {
-      _restartBestAnt = iterationBestAnt
+    if (iterationBestAntIter < _restartBestAnt.tourLength) {
+      _restartBestAnt = _ants(iterationBestAntIter)
+      _restartFoundBest = _iteration
+      println("Restart best: " + _restartBestAnt.tourLength + ", restartFoundBest " + _restartFoundBest + ", time " + elapsedTime())
     }
   }
 
@@ -169,7 +204,7 @@ object Aco {
 
   def mmasUpdate(): Unit = {
     if ((_iteration % ExecutionParameters.ugb) != 0) {
-      val bestAnt = findBest()
+      val bestAnt = _ants(findBest())
       globalUpdatePheremone(bestAnt)
     } else {
       if (ExecutionParameters.ugb == 1 && (_iteration - _restartIteration > 50)) globalUpdatePheremone(_bestSoFarAnt) else globalUpdatePheremone(_restartBestAnt)

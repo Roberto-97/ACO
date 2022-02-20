@@ -155,7 +155,7 @@ class Ant{
   }
   
   def computeTour(): Ant = {
-    _tour = _tour.updated(numberCities, _tour(0))
+    _tour = _tour.updated(numberCities - 1, _tour(0))
     _tourLength = computeTourLength(_tour)
     this
   }

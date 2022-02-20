@@ -4,10 +4,11 @@ import Entities.Aco.{_bestSoFarAnt, computeTotalInformation, initPheromoneTrails
 import Entities.DistanceStrategies.DistanceStrategies
 import Entities.DistanceStrategies.{AttDistance, CeilDistance, GeoDistance, RoundDistance}
 import Entities.{Aco, Ant, ExecutionParameters, LocalSearch, Tsp}
-import Util.Timer.{startTimer, elapsedTime}
+import Util.Timer.{elapsedTime, startTimer}
 
 import scala.io.Source
-import Entities.Tsp.{computeDistances, initializeTspParams, nearestNeighborsMatrix, numberCities, setNodeCordSection}
+import Entities.Tsp.{computeDistances, computeTourLength, initializeTspParams, nearestNeighborsMatrix, numberCities, setNodeCordSection, name}
+
 
 object InOut {
 
@@ -23,11 +24,16 @@ object InOut {
   private var _maxTries: Int = 0
   private var _maxTours: Int = 0
   var _lambda: Double = 0.0
-  private var _foundBest: Int = 0
-  private var _bestInTry: Vector[Option[Int]] = Vector.empty
-  private var _bestFoundAt: Vector[Option[Int]] = Vector.empty
-  private var _timeBestFound: Vector[Option[Double]] = Vector.empty
-  private var _timeTotalRun: Vector[Option[Double]] = Vector.empty
+  var _foundBest: Int = 0
+  var _restartFoundBest: Int = 0
+  var _bestInTry: Vector[Option[Int]] = Vector.empty
+  var _bestFoundAt: Vector[Option[Int]] = Vector.empty
+  var _timeBestFound: Vector[Option[Double]] = Vector.empty
+  var _timeTotalRun: Vector[Option[Double]] = Vector.empty
+  var _timeUsed: Double = Double.NaN
+  var _foundBranching: Double = Double.NaN
+  var _branchingFactor: Double = Double.NaN
+  private var _timePassed: Double = Double.NaN
 
   def initializeParams(): Unit = {
     _bestInTry = Vector.fill(ExecutionParameters.maxTries)(Option.empty)
@@ -97,8 +103,8 @@ object InOut {
   def initTry(nTry: Int): Unit = {
     println("INITIALIZE TRIAL")
     startTimer()
-    val timeUsed = elapsedTime()
-    val timePassed = timeUsed
+    _timeUsed = elapsedTime()
+    _timePassed = _timeUsed
 
     /* Initialize variables concerning statistics */
     _nTours = 1
@@ -125,16 +131,32 @@ object InOut {
 
   def exitTry(nTry: Int): Unit = {
     checkTour(Aco._bestSoFarAnt.tour)
-    println("Best solution in try is " + Aco._bestSoFarAnt.tourLength)
+    println("Best Solution in try is " + Aco._bestSoFarAnt.tourLength)
+    println("Best Solution was found after " + _foundBest + " iterations")
     _bestInTry = _bestInTry.updated(nTry, Option(Aco._bestSoFarAnt.tourLength))
+    _bestFoundAt = _bestFoundAt.updated(nTry, Option(_foundBest))
+    _timeBestFound = _timeBestFound.updated(nTry, Option(_timeUsed))
+    _timeTotalRun = _timeTotalRun.updated(nTry, Option(elapsedTime()))
+    println("Try " + nTry + ", Best " + _bestInTry(nTry) + ", found at iteration " + _bestFoundAt(nTry) + ", found at time " + _timeBestFound(nTry))
+    println("End try")
+  }
 
+  def exitProgram(): Unit = {
+    println("end problem " + name)
   }
 
   def checkTour(tour: Vector[Option[Integer]]): Unit = {
-    val sum: Int = tour.map(e => e.get).reduce((x,y) => x + y)
+    val vectSum: Vector[Integer] = tour.map(e => e.getOrElse(0))
+    val sum: Int = vectSum.reduce((x,y) => x + y)
     if (sum != ((numberCities - 1) * 2)/ 2) {
       println("Next tour must be flawed !!")
+      printTour(tour)
     }
+  }
+
+  def printTour(tour: Vector[Option[Integer]]): Unit = {
+    tour.map(city => println(""+ city))
+    println("Tour Length = " + computeTourLength(tour))
   }
 
   def printParameters(): Unit = {

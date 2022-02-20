@@ -9,7 +9,7 @@ import scala.jdk.CollectionConverters.*
 
 object Tsp {
 
-  private var name: String = null
+  var name: String = null
   var distance: Vector[Vector[Int]] = Vector.empty
   var numberCities: Integer = null
   var nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
