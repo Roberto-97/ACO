@@ -22,10 +22,11 @@ object ExecutionParameters {
   var rasRanks: Int = 0
   var elitistsAnts: Int = 0
   var tsplibfile: String  = null
+  var branchFac: Double = 0.0
 
   def init(lsFlag: Int, nnLs: Int, nAnts: Int, nnAnts: Int, rho: Double, alpha: Double, beta: Double, q0: Double,
            maxTries: Int, maxTours: Int, maxTime: Double, optimal: Int, asFlag: Int, mmasFlag: Int, trailMax: Int,
-           trailMin: Int, ugb: Int, trail0: Double, rasRanks: Int, elitistsAnts: Int, tsplibfile: String): Unit = {
+           trailMin: Int, ugb: Int, trail0: Double, rasRanks: Int, elitistsAnts: Int, tsplibfile: String, branchFac: Double): Unit = {
     this.lsFlag = lsFlag
     this.nnLs = nnLs
     this.nAnts = nAnts
@@ -47,6 +48,7 @@ object ExecutionParameters {
     this.rasRanks = rasRanks
     this.elitistsAnts = elitistsAnts
     this.tsplibfile = tsplibfile
+    this.branchFac = branchFac
   }
 
 

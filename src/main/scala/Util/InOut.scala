@@ -131,7 +131,7 @@ object InOut {
 
   def exitTry(nTry: Int): Unit = {
     checkTour(Aco._bestSoFarAnt.tour)
-    println("Best Solution in try is " + Aco._bestSoFarAnt.tourLength)
+    println("Best Solution in try " + nTry + " is " + Aco._bestSoFarAnt.tourLength)
     println("Best Solution was found after " + _foundBest + " iterations")
     _bestInTry = _bestInTry.updated(nTry, Option(Aco._bestSoFarAnt.tourLength))
     _bestFoundAt = _bestFoundAt.updated(nTry, Option(_foundBest))
@@ -142,7 +142,10 @@ object InOut {
   }
 
   def exitProgram(): Unit = {
-    println("end problem " + name)
+    val bestTourLength = _bestInTry.minBy(_.get)
+    val worstTourLength = _bestInTry.maxBy(_.get)
+    println("Best try: " + bestTourLength + " Worst try: " + worstTourLength)
+    println("End problem " + name)
   }
 
   def checkTour(tour: Vector[Option[Integer]]): Unit = {

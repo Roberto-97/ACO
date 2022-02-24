@@ -11,8 +11,8 @@ import scala.language.postfixOps
 object Aco {
 
   private var _ants: Vector[Ant] = Vector.empty
-  var _bestSoFarAnt: Ant = new Ant
-  var _restartBestAnt: Ant = new Ant
+  var _bestSoFarAnt: Ant = null
+  var _restartBestAnt: Ant = null
 
 
   private var _pheremone: Array[Array[Double]] = Array.empty
@@ -21,8 +21,8 @@ object Aco {
 
   def allocateAnts(): Unit = {
     _ants = Vector.fill(ExecutionParameters.nAnts)(new Ant)
-    _bestSoFarAnt.initializeAnt()
-    _restartBestAnt.initializeAnt()
+    _bestSoFarAnt = new Ant().initializeAnt()
+    _restartBestAnt = new Ant().initializeAnt()
     _probOfSelection = Vector.fill(ExecutionParameters.nAnts + 1)(0.0)
     _probOfSelection = _probOfSelection.updated(ExecutionParameters.nAnts, Double.MaxValue)
   }
@@ -84,20 +84,6 @@ object Aco {
           total(j)(i) = total(i)(j)))
   }
 
-  def checkPheromoneTrailLimits(): Unit = {
-    (0 until numberCities).map((i) =>
-      (0 until i).map((j) => {
-        if (pheremone(i)(j) < ExecutionParameters.trailMin) {
-          pheremone = pheremone.updated(i, pheremone(i).updated(j, ExecutionParameters.trailMin))
-          pheremone = pheremone.updated(j, pheremone(j).updated(i, ExecutionParameters.trailMin))
-        } else if (pheremone(i)(j) > ExecutionParameters.trailMax) {
-          pheremone = pheremone.updated(i, pheremone(i).updated(j, ExecutionParameters.trailMax))
-          pheremone = pheremone.updated(j, pheremone(j).updated(i, ExecutionParameters.trailMax))
-        }
-      })
-    )
-  }
-
   def nnTour(): Int = {
     _ants(0).initializeAnt()
     _ants(0).randomInitialPlaceAnt()
@@ -116,25 +102,33 @@ object Aco {
     result
   }
 
-  def searchControlAndStatistics(): Unit = {
+  def searchControlAndStatistics(nTry: Int): Unit = {
+    println("SEARCH CONTROL AND STATISTICS")
     if (_iteration % 100 == 0) {
       val branchingFactor = nodeBranching(_lambda)
-      _restartBestAnt.tourLength = Int.MaxValue
-      initPheromoneTrails(ExecutionParameters.trailMax)
-      computeTotalInformation()
-      _restartIteration = _iteration
-      _restartTime = elapsedTime()
+      println("Best so far " + _bestSoFarAnt.tourLength + ", iteration: " + _iteration + ", time "+ elapsedTime() + ", b_fac " + branchingFactor)
+      if (ExecutionParameters.mmasFlag != 0 && (branchingFactor < ExecutionParameters.branchFac) && (_iteration - _restartFoundBest > 250)) {
+        println("INIT TRAILS !!!")
+        _restartBestAnt.tourLength = Int.MaxValue
+        initPheromoneTrails(ExecutionParameters.trailMax)
+        computeTotalInformation()
+        _restartIteration = _iteration
+        _restartTime = elapsedTime()
+      }
+      println("try " + nTry + ", iteration " + _iteration + ", b-fac " + branchingFactor)
     }
   }
 
   def findBest(): Int = {
     var iter = 0
+    var i = 0
     var min = _ants(0).tourLength
     _ants.map(ant => {
       if (ant.tourLength < min) {
         min = ant.tourLength
-        iter = iter
+        iter = i
       }
+      i += 1
     })
     iter
   }
@@ -151,7 +145,7 @@ object Aco {
   def updateStatistics(): Unit = {
     var iterationBestAntIter: Integer = null
     iterationBestAntIter = findBest()
-    if (iterationBestAntIter < _bestSoFarAnt.tourLength) {
+    if (_ants(iterationBestAntIter).tourLength < _bestSoFarAnt.tourLength) {
       _timeUsed = elapsedTime()
       _bestSoFarAnt = _ants(iterationBestAntIter)
       _restartBestAnt = _ants(iterationBestAntIter)
@@ -173,7 +167,7 @@ object Aco {
         }
       }
     }
-    if (iterationBestAntIter < _restartBestAnt.tourLength) {
+    if (_ants(iterationBestAntIter).tourLength < _restartBestAnt.tourLength) {
       _restartBestAnt = _ants(iterationBestAntIter)
       _restartFoundBest = _iteration
       println("Restart best: " + _restartBestAnt.tourLength + ", restartFoundBest " + _restartFoundBest + ", time " + elapsedTime())
@@ -181,28 +175,45 @@ object Aco {
   }
 
   def evaporation(): Unit = {
+    println("Pheromone evaporation")
     (0 until numberCities).map((i) =>
       (0 to i).map((j) => {
-        pheremone = pheremone.updated(i, pheremone(i).updated(j, (1 - ExecutionParameters.rho) * pheremone(i)(j)))
-        pheremone = pheremone.updated(j, pheremone(j).updated(i, pheremone(i)(j)))
+        pheremone(i)(j) = (1 - ExecutionParameters.rho) * pheremone(i)(j)
+        pheremone(j)(i) = pheremone(i)(j)
       }))
   }
 
   def globalUpdatePheremone(ant: Ant, weigth: Double = 1.0): Unit = {
+    println("Global pheromone update")
     val dTau = weigth / ant.tourLength
-    (0 until numberCities).map((i) => {
+    (0 until numberCities - 1).map((i) => {
       val j = ant.tour(i).get
       val h = ant.tour(i + 1).get
-      pheremone = pheremone.updated(j, pheremone(j).updated(h, pheremone(j)(h) + dTau))
-      pheremone = pheremone.updated(h, pheremone(h).updated(j, pheremone(j)(h)))
+      pheremone(j)(h) += dTau
+      pheremone(h)(j) = pheremone(j)(h)
     })
   }
 
+  def checkPheromoneTrailLimits(): Unit = {
+    println("Mmas specific: check pheromone trail limits")
+    (0 until numberCities).map(i => (0 until i).map(j => {
+      if (pheremone(i)(j) < ExecutionParameters.trailMin) {
+        pheremone(i)(j) = ExecutionParameters.trailMin
+        pheremone(j)(i) = ExecutionParameters.trailMin
+      } else if (pheremone(i)(j) > ExecutionParameters.trailMax) {
+        pheremone(i)(j) = ExecutionParameters.trailMax
+        pheremone(i)(j) = ExecutionParameters.trailMax
+      }
+    }))
+  }
+
   def asUpdate(): Unit = {
+    println("Ant System pheromone deposit")
     _ants.map(ant => globalUpdatePheremone(ant))
   }
 
   def mmasUpdate(): Unit = {
+    println("MAX-MIN Ant System pheromone deposit")
     if ((_iteration % ExecutionParameters.ugb) != 0) {
       val bestAnt = _ants(findBest())
       globalUpdatePheremone(bestAnt)
@@ -225,6 +236,10 @@ object Aco {
       asUpdate()
     } else if (ExecutionParameters.mmasFlag != 0){
       mmasUpdate()
+    }
+
+    if (ExecutionParameters.mmasFlag != 0 && ExecutionParameters.lsFlag == 0) {
+      checkPheromoneTrailLimits()
     }
 
     if (ExecutionParameters.asFlag != 0 || ExecutionParameters.mmasFlag != 0) {

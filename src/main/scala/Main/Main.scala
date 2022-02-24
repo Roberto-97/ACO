@@ -21,23 +21,17 @@ object Main {
       initTry(nTry)
       while (!Aco.terminationCondition()) {
         Aco.constructSolutions()
+        if (ExecutionParameters.lsFlag != 0) {
+          /*TODO: localSearch()*/
+        }
         Aco.updateStatistics()
+        Aco.pheromoneTrailUpdate()
+        Aco.searchControlAndStatistics(nTry)
+        _iteration += 1
       }
       exitTry(nTry)
     })
     exitProgram()
-//    (0 to  ExecutionParameters.maxTries).map((nTry) => {
-//      initTry()
-//      while (!Aco.terminationCondition()){
-//        Aco.constructSolutions()
-//        if (ExecutionParameters.lsFlag != 0) {
-//          /* TODO: Local search */
-//        }
-//        Aco.updateStatistics()
-//        _iteration += 1
-//      }
-//      exitTry()
-//    })
   }
 
 

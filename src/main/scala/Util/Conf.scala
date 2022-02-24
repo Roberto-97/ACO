@@ -25,6 +25,7 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
   val rasRanks = opt[Int](required = false, validate = _ > 0)
   val elitistAnts = opt[Int](required = false, validate = _ > 0)
   val tsplibfile = opt[String](required = true)
+  val branchFac = opt[Double](required = false, validate = _ > 0)
   verify()
 
   def setDefaultAsParameters(): Unit = {
@@ -83,7 +84,8 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
       alpha.getOrElse(1.0), beta.getOrElse(2.0), q0.getOrElse(0.0), maxTries.getOrElse(10),
       maxTours.getOrElse(0), maxTime.getOrElse(10.0), optimal.getOrElse(1), asFlag.getOrElse(0),
         mmasFlag.getOrElse(1), trailMax.getOrElse(0), trailMix.getOrElse(0), ugb.getOrElse(Int.MaxValue),
-      trail0.getOrElse(0.0), rasRanks.getOrElse(0), elitistAnts.getOrElse(0), tsplibfile.apply())
+      trail0.getOrElse(0.0), rasRanks.getOrElse(0), elitistAnts.getOrElse(0), tsplibfile.apply(),
+        branchFac.getOrElse(1.00001))
       setDefaultParameters()
   }
 
