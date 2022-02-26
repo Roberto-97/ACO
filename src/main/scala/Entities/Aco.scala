@@ -59,12 +59,11 @@ object Aco {
   }
 
   def constructSolutions(): Unit = {
-    println("Construct solutions for all ants")
     /* Mark all cities as unvisited*/
     initializeAnts()
     /* Place the ants on same initial city*/
     randomInitialPlaceAnt()
-    (1 until Tsp.numberCities - 1).map((step) => neighbourChooseAndMoveToNext(step))
+    (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step))
     computeTour()
     _nTours += ExecutionParameters.nAnts
   }
@@ -77,7 +76,6 @@ object Aco {
   }
 
   def computeTotalInformation(): Unit = {
-    println("Compute total information")
     (0 until numberCities).map((i) =>
       (0 until i).map((j) =>
         total(i)(j) = Math.pow(pheremone(i)(j), ExecutionParameters.alpha) * Math.pow(Tsp.heuristic(i, j), ExecutionParameters.beta)
@@ -88,11 +86,11 @@ object Aco {
     _ants(0).initializeAnt()
     _ants(0).randomInitialPlaceAnt()
 
-    (1 until Tsp.numberCities - 1).map((step) => {
+    (1 until numberCities).map((step) => {
       _ants(0).chooseClosestNext(step)
     })
-    _ants(0).tour = _ants(0).tour.updated(numberCities - 1, _ants(0).tour(0))
-    if (ExecutionParameters.lsFlag != 0) {
+    _ants(0).tour = _ants(0).tour.updated(numberCities, _ants(0).tour(0))
+    if (ExecutionParameters.lsFlagValues.contains(ExecutionParameters.lsFlag)) {
       /*TODO: twoOptFirst()*/
     }
     _nTours += 1
@@ -103,7 +101,6 @@ object Aco {
   }
 
   def searchControlAndStatistics(nTry: Int): Unit = {
-    println("SEARCH CONTROL AND STATISTICS")
     if (_iteration % 100 == 0) {
       val branchingFactor = nodeBranching(_lambda)
       println("Best so far " + _bestSoFarAnt.tourLength + ", iteration: " + _iteration + ", time "+ elapsedTime() + ", b_fac " + branchingFactor)
@@ -147,14 +144,14 @@ object Aco {
     iterationBestAntIter = findBest()
     if (_ants(iterationBestAntIter).tourLength < _bestSoFarAnt.tourLength) {
       _timeUsed = elapsedTime()
-      _bestSoFarAnt = _ants(iterationBestAntIter)
-      _restartBestAnt = _ants(iterationBestAntIter)
+      _ants(iterationBestAntIter).clone(_bestSoFarAnt)
+      _ants(iterationBestAntIter).clone(_restartBestAnt)
       _foundBest = _iteration
       _restartFoundBest = _iteration
       _foundBranching = nodeBranching(_lambda)
       _branchingFactor = _foundBranching
       if (ExecutionParameters.mmasFlag != 0) {
-        if (ExecutionParameters.lsFlag != 0) {
+        if (ExecutionParameters.lsFlagValues.contains(ExecutionParameters.lsFlag)) {
           val px = Math.exp(Math.log(0.05)/numberCities)
           ExecutionParameters.trailMin = 1.0 * (1 - px) / (px * ((ExecutionParameters.nnAnts + 1) / 2))
           ExecutionParameters.trailMax = 1.0 / (ExecutionParameters.rho * _bestSoFarAnt.tourLength)
@@ -168,23 +165,17 @@ object Aco {
       }
     }
     if (_ants(iterationBestAntIter).tourLength < _restartBestAnt.tourLength) {
-      _restartBestAnt = _ants(iterationBestAntIter)
+      _ants(iterationBestAntIter).clone(_restartBestAnt)
       _restartFoundBest = _iteration
       println("Restart best: " + _restartBestAnt.tourLength + ", restartFoundBest " + _restartFoundBest + ", time " + elapsedTime())
     }
   }
 
   def evaporation(): Unit = {
-    println("Pheromone evaporation")
-    (0 until numberCities).map((i) =>
-      (0 to i).map((j) => {
-        pheremone(i)(j) = (1 - ExecutionParameters.rho) * pheremone(i)(j)
-        pheremone(j)(i) = pheremone(i)(j)
-      }))
+    pheremone = Array.fill(numberCities)(Array.fill(numberCities)((1 - ExecutionParameters.rho) * pheremone(0)(0)))
   }
 
   def globalUpdatePheremone(ant: Ant, weigth: Double = 1.0): Unit = {
-    println("Global pheromone update")
     val dTau = weigth / ant.tourLength
     (0 until numberCities - 1).map((i) => {
       val j = ant.tour(i).get
@@ -195,7 +186,6 @@ object Aco {
   }
 
   def checkPheromoneTrailLimits(): Unit = {
-    println("Mmas specific: check pheromone trail limits")
     (0 until numberCities).map(i => (0 until i).map(j => {
       if (pheremone(i)(j) < ExecutionParameters.trailMin) {
         pheremone(i)(j) = ExecutionParameters.trailMin
@@ -208,12 +198,10 @@ object Aco {
   }
 
   def asUpdate(): Unit = {
-    println("Ant System pheromone deposit")
     _ants.map(ant => globalUpdatePheremone(ant))
   }
 
   def mmasUpdate(): Unit = {
-    println("MAX-MIN Ant System pheromone deposit")
     if ((_iteration % ExecutionParameters.ugb) != 0) {
       val bestAnt = _ants(findBest())
       globalUpdatePheremone(bestAnt)
@@ -225,7 +213,7 @@ object Aco {
 
   def pheromoneTrailUpdate(): Unit = {
     if (ExecutionParameters.asFlag != 0 || ExecutionParameters.mmasFlag != 0) {
-      if (ExecutionParameters.lsFlag != 0) {
+      if (ExecutionParameters.lsFlagValues.contains(ExecutionParameters.lsFlag)) {
         /*TODO: LocalSearch*/
       } else {
         evaporation()
@@ -238,7 +226,7 @@ object Aco {
       mmasUpdate()
     }
 
-    if (ExecutionParameters.mmasFlag != 0 && ExecutionParameters.lsFlag == 0) {
+    if (ExecutionParameters.mmasFlag != 0 && !ExecutionParameters.lsFlagValues.contains(ExecutionParameters.lsFlag)) {
       checkPheromoneTrailLimits()
     }
 

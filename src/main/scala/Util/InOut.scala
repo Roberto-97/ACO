@@ -65,9 +65,9 @@ object InOut {
       println("Read problem data ..")
       val resource = Source.fromResource(filename)
       val lines = resource.getLines().toVector
-      val name = lines(0).split(NAME_KEY)(1).trim
-      val dimension = lines(3).split(DIMENSION_KEY)(1).trim
-      val edgeWeightType = lines(4).split(EDGE_WEIGHT_TYPE)(1).trim
+      val name = lines(0).replaceAll( " ", "").split(NAME_KEY)(1)
+      val dimension = lines(3).replaceAll( " ", "").split(DIMENSION_KEY)(1).trim
+      val edgeWeightType = lines(4).replaceAll( " ", "").split(EDGE_WEIGHT_TYPE)(1).trim
       initializeTspParams(name, Integer.valueOf(dimension), selectDistance(edgeWeightType))
       setNodePtr(lines)
       println("done ..")
@@ -150,10 +150,11 @@ object InOut {
 
   def checkTour(tour: Vector[Option[Integer]]): Unit = {
     val vectSum: Vector[Integer] = tour.map(e => e.getOrElse(0))
-    val sum: Int = vectSum.reduce((x,y) => x + y)
-    if (sum != ((numberCities - 1) * 2)/ 2) {
+    val sum: Int = vectSum.dropRight(1).reduce((x,y) => x + y)
+    if (sum != ((numberCities - 1) * numberCities)/ 2) {
       println("Next tour must be flawed !!")
       printTour(tour)
+      println("Tour sum: " + sum)
     }
   }
 

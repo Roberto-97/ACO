@@ -1,10 +1,11 @@
 package Main
 
 
+import Entities.Aco._bestSoFarAnt
 import Entities.{Aco, Ant, ExecutionParameters, LocalSearch, Tsp}
 import Util.Conf
 import Util.Timer.{elapsedTime, startTimer}
-import Util.InOut.{ initProgram, initTry, exitTry, _iteration, exitProgram }
+import Util.InOut.{_iteration, exitProgram, exitTry, initProgram, initTry}
 
 object Main {
 
@@ -21,7 +22,7 @@ object Main {
       initTry(nTry)
       while (!Aco.terminationCondition()) {
         Aco.constructSolutions()
-        if (ExecutionParameters.lsFlag != 0) {
+        if (ExecutionParameters.lsFlagValues.contains(ExecutionParameters.lsFlag)) {
           /*TODO: localSearch()*/
         }
         Aco.updateStatistics()

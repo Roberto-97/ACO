@@ -2,7 +2,7 @@ package Entities
 
 import scala.beans.BeanProperty
 import Entities.Tsp.{computeTourLength, distance, nearestNeighborsMatrix, numberCities}
-import Entities.Aco.{probOfSelection, total}
+import Entities.Aco.{_bestSoFarAnt, probOfSelection, total}
 
 import scala.util.Random
 
@@ -22,8 +22,8 @@ class Ant{
   }
 
   def initializeAnt(): Ant = {
-    _tour = Vector.fill(numberCities)(Option.empty)
-    _visited = Vector.fill(numberCities)(false)
+    _tour = Vector.fill(numberCities + 1)(Option.empty)
+    _visited = Vector.fill(numberCities + 1)(false)
     this
   }
 
@@ -155,9 +155,15 @@ class Ant{
   }
   
   def computeTour(): Ant = {
-    _tour = _tour.updated(numberCities - 1, _tour(0))
+    _tour = _tour.updated(numberCities, _tour(0))
     _tourLength = computeTourLength(_tour)
     this
+  }
+
+  def clone(antToClone: Ant): Unit = {
+    antToClone.tourLength = _tourLength
+    antToClone._tour = _tour
+    antToClone._visited = _visited
   }
 
 
