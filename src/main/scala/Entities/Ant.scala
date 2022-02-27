@@ -1,8 +1,9 @@
 package Entities
 
 import scala.beans.BeanProperty
-import Entities.Tsp.{computeTourLength, distance, nearestNeighborsMatrix, numberCities}
-import Entities.Aco.{_bestSoFarAnt, probOfSelection, total}
+import Entities.Tsp.*
+import Entities.Aco.*
+import Entities.ExecutionParameters.*
 
 import scala.util.Random
 
@@ -10,6 +11,8 @@ class Ant{
   private var _tour: Vector[Option[Integer]] = Vector.empty
   private var _visited: Vector[Boolean] = Vector.empty
   private var _tourLength: Integer = null
+
+  /************************************************* Setters && Getters *******************************************************/
 
   def tour = _tour
   def tour_=(tour:Vector[Option[Integer]]) = {
@@ -20,6 +23,13 @@ class Ant{
   def tourLength_=(tourLength: Integer) = {
     _tourLength = tourLength
   }
+
+  def visited = _visited
+  def visited_=(visited:  Vector[Boolean]) = {
+    _visited = visited
+  }
+
+  /****************************************************************************************************************************/
 
   def initializeAnt(): Ant = {
     _tour = Vector.fill(numberCities + 1)(Option.empty)
@@ -51,7 +61,7 @@ class Ant{
       partialSum += probPtr(i)
     }
 
-    if (i == ExecutionParameters.nnAnts) {
+    if (i == nnAnts) {
       return neighbourChooseBestNext(step)
     }
     val help = nearestNeighborsMatrix(currentCity)(i).get
@@ -87,7 +97,7 @@ class Ant{
     var nextCity = numberCities
     val currentCity = _tour(step - 1).get
     var valueBest = -1.0
-    (0 until ExecutionParameters.nnAnts).map((i) => {
+    (0 until nnAnts).map((i) => {
       val helpCity = nearestNeighborsMatrix(currentCity)(i).get
       if (!_visited(helpCity)) {
         val help = total(currentCity)(helpCity)
@@ -114,13 +124,13 @@ class Ant{
     var sumProb = 0.0
     var probPtr = probOfSelection
 
-    if ((ExecutionParameters.q0 > 0.0) && (new Random().nextDouble() < ExecutionParameters.q0)) {
+    if ((q0 > 0.0) && (new Random().nextDouble() < q0)) {
       /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
       return neighbourChooseBestNext(step)
     }
 
     val currentCity = _tour(step - 1).get
-    (0 until ExecutionParameters.nnAnts).map((i) => {
+    (0 until nnAnts).map((i) => {
       if (_visited(nearestNeighborsMatrix(currentCity)(i).get)){
         probPtr = probPtr.updated(i, 0.0) /* City already visited */
       } else {

@@ -78,7 +78,7 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
   }
 
   def build: Unit = {
-      ExecutionParameters.init(lsFlag.getOrElse(5), nnLs.getOrElse(20),
+      ExecutionParameters.init(lsFlag.getOrElse(0), nnLs.getOrElse(20),
       numberAnts.getOrElse(25), numberNeighboursAnts.getOrElse(20), rho.getOrElse(0.5),
       alpha.getOrElse(1.0), beta.getOrElse(2.0), q0.getOrElse(0.0), maxTries.getOrElse(10),
       maxTours.getOrElse(0), maxTime.getOrElse(10.0), optimal.getOrElse(1), asFlag.getOrElse(0),

@@ -1,13 +1,14 @@
 package Util
 
-import Entities.Aco.{_bestSoFarAnt, computeTotalInformation, initPheromoneTrails, nnTour}
+import Entities.Aco.*
+import Entities.ExecutionParameters.*
 import Entities.DistanceStrategies.DistanceStrategies
 import Entities.DistanceStrategies.{AttDistance, CeilDistance, GeoDistance, RoundDistance}
 import Entities.{Aco, Ant, ExecutionParameters, LocalSearch, Tsp}
 import Util.Timer.{elapsedTime, startTimer}
 
 import scala.io.Source
-import Entities.Tsp.{computeDistances, computeTourLength, initializeTspParams, nearestNeighborsMatrix, numberCities, setNodeCordSection, name}
+import Entities.Tsp.*
 
 
 object InOut {
@@ -17,29 +18,112 @@ object InOut {
   private val EDGE_WEIGHT_TYPE = "EDGE_WEIGHT_TYPE:"
 
   private var _nTry: Int = 0
-  var _nTours: Int = 0
-  var _iteration: Int = 0
-  var _restartIteration: Int = 0
-  var _restartTime: Double = 0.0
-  private var _maxTries: Int = 0
-  private var _maxTours: Int = 0
-  var _lambda: Double = 0.0
-  var _foundBest: Int = 0
-  var _restartFoundBest: Int = 0
-  var _bestInTry: Vector[Option[Int]] = Vector.empty
-  var _bestFoundAt: Vector[Option[Int]] = Vector.empty
-  var _timeBestFound: Vector[Option[Double]] = Vector.empty
-  var _timeTotalRun: Vector[Option[Double]] = Vector.empty
-  var _timeUsed: Double = Double.NaN
-  var _foundBranching: Double = Double.NaN
-  var _branchingFactor: Double = Double.NaN
+  private var _nTours: Int = 0
+  private var _iteration: Int = 0
+  private var _restartIteration: Int = 0
+  private var _restartTime: Double = 0.0
+  private var _lambda: Double = 0.0
+  private var _foundBest: Int = 0
+  private var _restartFoundBest: Int = 0
+  private var _bestInTry: Vector[Option[Int]] = Vector.empty
+  private var _bestFoundAt: Vector[Option[Int]] = Vector.empty
+  private var _timeBestFound: Vector[Option[Double]] = Vector.empty
+  private var _timeTotalRun: Vector[Option[Double]] = Vector.empty
+  private var _timeUsed: Double = Double.NaN
+  private var _foundBranching: Double = Double.NaN
+  private var _branchingFactor: Double = Double.NaN
   private var _timePassed: Double = Double.NaN
 
+  /************************************************* Setters && Getters *******************************************************/
+
+  def nTry = _nTry
+  def nTry_=(nTry:Int) = {
+    _nTry = nTry
+  }
+
+  def nTours = _nTours
+  def nTours_=(nTours:Int) = {
+    _nTours = nTours
+  }
+
+  def iteration = _iteration
+  def iteration_=(iteration:Int) = {
+    _iteration = iteration
+  }
+
+  def restartIteration = _restartIteration
+  def restartIteration_=(restartIteration:Int) = {
+    _restartIteration = restartIteration
+  }
+
+  def restartTime = _restartTime
+  def restartTime_=(restartTime:Double) = {
+    _restartTime = restartTime
+  }
+
+  def lambda = _lambda
+  def lambda_=(lambda:Double) = {
+    _lambda = lambda
+  }
+
+  def foundBest = _foundBest
+  def foundBest_=(foundBest:Int) = {
+    _foundBest = foundBest
+  }
+
+  def restartFoundBest = _restartFoundBest
+  def restartFoundBest_=(restartFoundBest:Int) = {
+    _restartFoundBest = restartFoundBest
+  }
+
+  def bestInTry = _bestInTry
+  def bestInTry_=(bestInTry:Vector[Option[Int]]) = {
+    _bestInTry = bestInTry
+  }
+
+  def bestFoundAt = _bestFoundAt
+  def bestFoundAt_=(bestFoundAt:Vector[Option[Int]]) = {
+    _bestFoundAt = bestFoundAt
+  }
+
+  def timeBestFound = _timeBestFound
+  def timeBestFound_=(timeBestFound:Vector[Option[Double]]) = {
+    _timeBestFound = timeBestFound
+  }
+
+  def timeTotalRun = _timeTotalRun
+  def timeTotalRun_=(timeTotalRun:Vector[Option[Double]]) = {
+    _timeTotalRun = timeTotalRun
+  }
+
+  def timeUsed = _timeUsed
+  def timeUsed_=(timeUsed:Double) = {
+    _timeUsed = timeUsed
+  }
+
+  def foundBranching = _foundBranching
+  def foundBranching_=(foundBranching:Double) = {
+    _foundBranching = foundBranching
+  }
+
+  def branchingFactor = _branchingFactor
+  def branchingFactor_=(branchingFactor:Double) = {
+    _branchingFactor = branchingFactor
+  }
+
+  def timePassed = _timePassed
+  def timePassed_=(timePassed:Double) = {
+    _timePassed = timePassed
+  }
+
+
+  /****************************************************************************************************************************/
+
   def initializeParams(): Unit = {
-    _bestInTry = Vector.fill(ExecutionParameters.maxTries)(Option.empty)
-    _bestFoundAt = Vector.fill(ExecutionParameters.maxTries)(Option.empty)
-    _timeBestFound = Vector.fill(ExecutionParameters.maxTries)(Option.empty)
-    _timeTotalRun = Vector.fill(ExecutionParameters.maxTries)(Option.empty)
+    _bestInTry = Vector.fill(maxTries)(Option.empty)
+    _bestFoundAt = Vector.fill(maxTries)(Option.empty)
+    _timeBestFound = Vector.fill(maxTries)(Option.empty)
+    _timeTotalRun = Vector.fill(maxTries)(Option.empty)
   }
 
 
@@ -80,19 +164,19 @@ object InOut {
   def nodeBranching(lambda: Double): Double = {
     var numBranches = Vector.fill(numberCities)(0.0)
     (0 until numberCities).map((m) => {
-      var min = Aco.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
-      var max = Aco.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
-      (0 until ExecutionParameters.nnAnts).map(i => {
-        if (Aco.pheremone(m)(nearestNeighborsMatrix(m)(i).get) > max) {
-          max = Aco.pheremone(m)(nearestNeighborsMatrix(m)(i).get)
+      var min = pheremone(m)(nearestNeighborsMatrix(m)(1).get)
+      var max = pheremone(m)(nearestNeighborsMatrix(m)(1).get)
+      (1 until nnAnts).map(i => {
+        if (pheremone(m)(nearestNeighborsMatrix(m)(i).get) > max) {
+          max = pheremone(m)(nearestNeighborsMatrix(m)(i).get)
         }
-        if (Aco.pheremone(m)(nearestNeighborsMatrix(m)(i).get) < min) {
-          min = Aco.pheremone(m)(nearestNeighborsMatrix(m)(i).get)
+        if (pheremone(m)(nearestNeighborsMatrix(m)(i).get) < min) {
+          min = pheremone(m)(nearestNeighborsMatrix(m)(i).get)
         }
       })
       val cutoff = min + lambda * (max - min)
-      (0 until ExecutionParameters.nnAnts).map(i => {
-        if (Aco.pheremone(m)(nearestNeighborsMatrix(m)(i).get) > cutoff)
+      (0 until nnAnts).map(i => {
+        if (pheremone(m)(nearestNeighborsMatrix(m)(i).get) > cutoff)
           numBranches = numBranches.updated(m, numBranches(m) + 1.0)
       })
     })
@@ -111,16 +195,16 @@ object InOut {
     _iteration = 1
     _restartIteration = 1
     _lambda = 0.05
-    _bestSoFarAnt.tourLength = Int.MaxValue
+    bestSoFarAnt.tourLength = Int.MaxValue
     _foundBest = 0
 
-    if (ExecutionParameters.mmasFlag == 0) {
-      ExecutionParameters.trail0 = 1.0 / (ExecutionParameters.rho * nnTour())
-      initPheromoneTrails(ExecutionParameters.trail0)
+    if (mmasFlag == 0) {
+      trail0 = 1.0 / (rho * nnTour())
+      initPheromoneTrails(trail0)
     } else {
-      ExecutionParameters.trailMax = 1.0 / (ExecutionParameters.rho * nnTour())
-      ExecutionParameters.trailMin = ExecutionParameters.trailMax / (2 * numberCities)
-      initPheromoneTrails(ExecutionParameters.trailMax)
+      trailMax = 1.0 / (rho * nnTour())
+      trailMin = trailMax / (2 * numberCities)
+      initPheromoneTrails(trailMax)
     }
 
     /* Calculate combined information pheromone times heuristic information*/
@@ -130,10 +214,10 @@ object InOut {
   }
 
   def exitTry(nTry: Int): Unit = {
-    checkTour(Aco._bestSoFarAnt.tour)
-    println("Best Solution in try " + nTry + " is " + Aco._bestSoFarAnt.tourLength)
+    checkTour(bestSoFarAnt.tour)
+    println("Best Solution in try " + nTry + " is " + bestSoFarAnt.tourLength)
     println("Best Solution was found after " + _foundBest + " iterations")
-    _bestInTry = _bestInTry.updated(nTry, Option(Aco._bestSoFarAnt.tourLength))
+    _bestInTry = _bestInTry.updated(nTry, Option(bestSoFarAnt.tourLength))
     _bestFoundAt = _bestFoundAt.updated(nTry, Option(_foundBest))
     _timeBestFound = _timeBestFound.updated(nTry, Option(_timeUsed))
     _timeTotalRun = _timeTotalRun.updated(nTry, Option(elapsedTime()))
@@ -165,34 +249,34 @@ object InOut {
 
   def printParameters(): Unit = {
     println("\nExecution parameters:")
-    println("maxTries -> " + ExecutionParameters.maxTries)
-    println("maxTours -> " + ExecutionParameters.maxTours)
-    println("maxTime -> " + ExecutionParameters.maxTime)
-    println("optimum -> " + ExecutionParameters.optimal)
-    println("nAnts -> " + ExecutionParameters.nAnts)
-    println("nnAnts -> " + ExecutionParameters.nnAnts)
-    println("alpha -> " + ExecutionParameters.alpha)
-    println("beta -> " + ExecutionParameters.beta)
-    println("rho -> " + ExecutionParameters.rho)
-    println("q0 -> " + ExecutionParameters.q0)
-    println("elitistAnts -> " + ExecutionParameters.elitistsAnts)
-    println("rasRanks -> " + ExecutionParameters.rasRanks)
-    println("lsFlag -> " + ExecutionParameters.lsFlag)
-    println("nnLs -> " + ExecutionParameters.nnLs)
-    println("asFlag -> " + ExecutionParameters.asFlag)
-    println("mmasFlag -> " + ExecutionParameters.mmasFlag)
+    println("maxTries -> " + maxTries)
+    println("maxTours -> " + maxTours)
+    println("maxTime -> " + maxTime)
+    println("optimum -> " + optimal)
+    println("nAnts -> " + nAnts)
+    println("nnAnts -> " + nnAnts)
+    println("alpha -> " + alpha)
+    println("beta -> " + beta)
+    println("rho -> " + rho)
+    println("q0 -> " + q0)
+    println("elitistAnts -> " + elitistsAnts)
+    println("rasRanks -> " + rasRanks)
+    println("lsFlag -> " + lsFlag)
+    println("nnLs -> " + nnLs)
+    println("asFlag -> " + asFlag)
+    println("mmasFlag -> " + mmasFlag)
     println("\n")
   }
 
   def initProgram(): Unit = {
     initializeParams()
-    readEtsp(ExecutionParameters.tsplibfile)
-    if (ExecutionParameters.nAnts < 0)
-      ExecutionParameters.nAnts = numberCities
+    readEtsp(tsplibfile)
+    if (nAnts < 0)
+      nAnts = numberCities
 
-    ExecutionParameters.nnLs = (numberCities - 1).min(ExecutionParameters.nnLs)
+    nnLs = (numberCities - 1).min(nnLs)
 
-    Aco.allocateAnts()
+    allocateAnts()
 
     println("Calculating distance matrix ..")
     computeDistances()

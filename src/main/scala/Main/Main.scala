@@ -1,11 +1,13 @@
 package Main
 
 
-import Entities.Aco._bestSoFarAnt
 import Entities.{Aco, Ant, ExecutionParameters, LocalSearch, Tsp}
 import Util.Conf
 import Util.Timer.{elapsedTime, startTimer}
-import Util.InOut.{_iteration, exitProgram, exitTry, initProgram, initTry}
+import Util.InOut.*
+import Entities.Aco.*
+import Entities.Tsp.{computeNearestNeighborsMatrix}
+import ExecutionParameters.*
 
 object Main {
 
@@ -15,20 +17,20 @@ object Main {
     conf.build
     startTimer()
     initProgram()
-    Tsp.computeNearestNeighborsMatrix()
+    computeNearestNeighborsMatrix()
     val time_used = elapsedTime()
     println("\nInitialization took " + time_used + " seconds\n")
-    (0 until ExecutionParameters.maxTries).map(nTry => {
+    (0 until maxTries).map(nTry => {
       initTry(nTry)
-      while (!Aco.terminationCondition()) {
-        Aco.constructSolutions()
-        if (ExecutionParameters.lsFlagValues.contains(ExecutionParameters.lsFlag)) {
+      while (!terminationCondition()) {
+        constructSolutions()
+        if (lsFlagValues.contains(lsFlag)) {
           /*TODO: localSearch()*/
         }
-        Aco.updateStatistics()
-        Aco.pheromoneTrailUpdate()
-        Aco.searchControlAndStatistics(nTry)
-        _iteration += 1
+        updateStatistics()
+        pheromoneTrailUpdate()
+        searchControlAndStatistics(nTry)
+        iteration += 1
       }
       exitTry(nTry)
     })

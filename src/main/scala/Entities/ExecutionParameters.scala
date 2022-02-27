@@ -23,7 +23,7 @@ object ExecutionParameters {
   var elitistsAnts: Int = 0
   var tsplibfile: String  = null
   var branchFac: Double = 0.0
-  val lsFlagValues = Vector(0,1,2,3)
+  val lsFlagValues = Vector(1,2,3)
 
   def init(lsFlag: Int, nnLs: Int, nAnts: Int, nnAnts: Int, rho: Double, alpha: Double, beta: Double, q0: Double,
            maxTries: Int, maxTours: Int, maxTime: Double, optimal: Int, asFlag: Int, mmasFlag: Int, trailMax: Int,
