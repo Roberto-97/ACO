@@ -7,15 +7,17 @@ import Entities.ExecutionParameters.*
 import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
+import scala.util.Random
 
 object Tsp {
 
   private var _name: String = null
   private var _distance: Vector[Vector[Int]] = Vector.empty
   private var _numberCities: Integer = null
-  private var _nearestNeighborsMatrix: Vector[Vector[Option[Int]]] = Vector.empty
+  private var _nearestNeighborsMatrix: Array[Array[Option[Int]]] = Array.empty
   private var _nodeptr: Vector[Point] = Vector.empty
   private var _distanceStrategy: DistanceStrategies = null
+  private var _randomNumber: Random = null
 
   /************************************************* Setters && Getters *******************************************************/
 
@@ -35,7 +37,7 @@ object Tsp {
   }
 
   def nearestNeighborsMatrix = _nearestNeighborsMatrix
-  def nearestNeighborsMatrix_=(nearestNeighborsMatrix:Vector[Vector[Option[Int]]]) = {
+  def nearestNeighborsMatrix_=(nearestNeighborsMatrix:Array[Array[Option[Int]]]) = {
     _nearestNeighborsMatrix = nearestNeighborsMatrix
   }
 
@@ -49,6 +51,11 @@ object Tsp {
     _distanceStrategy = distanceStrategy
   }
 
+  def randomNumber = _randomNumber
+  def randomNumber_=(randomNumber: Random) = {
+    _randomNumber = randomNumber
+  }
+
   /****************************************************************************************************************************/
 
   def initializeTspParams(name: String, numberCities: Integer, distanceStrategy: DistanceStrategies): Unit = {
@@ -56,6 +63,7 @@ object Tsp {
     this._numberCities = numberCities
     this._distanceStrategy = distanceStrategy
     this._nodeptr = Vector.fill(numberCities)(null)
+    this._randomNumber = new Random(seed)
   }
 
   def setNodeCordSection(i: Double, j: Double, pos: Int): Unit = {
@@ -74,16 +82,17 @@ object Tsp {
       nn = _numberCities -1
     require(_numberCities > nn, "Number of cities must be mayor than depth of nearest ")
 
-    _nearestNeighborsMatrix = Vector.fill(_numberCities)(Vector.fill(nn)(Option.empty))
+    _nearestNeighborsMatrix = Array.fill(_numberCities)(Array.fill(nn)(Option.empty))
     var node = 0
-
     while (node < _numberCities) {
       var auxVector = (0 until _numberCities).map(i => (i, _distance(node)(i))).toVector
       auxVector = auxVector.updated(node, (node, Int.MaxValue))
       val nearestCities = auxVector
         .sortBy(_._2)
         .map(t => Option(t._1))
-      _nearestNeighborsMatrix = _nearestNeighborsMatrix.updated(node, (0 to nn - 1).map(i => nearestCities(i)).toVector)
+      for (i <- 0 until nn) {
+        _nearestNeighborsMatrix(node)(i) = nearestCities(i)
+      }
       node+=1
     }
     println("done ..")

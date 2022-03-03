@@ -252,6 +252,7 @@ object InOut {
     println("maxTries -> " + maxTries)
     println("maxTours -> " + maxTours)
     println("maxTime -> " + maxTime)
+    println("seed -> " + seed)
     println("optimum -> " + optimal)
     println("nAnts -> " + nAnts)
     println("nnAnts -> " + nnAnts)

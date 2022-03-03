@@ -23,11 +23,12 @@ object ExecutionParameters {
   var elitistsAnts: Int = 0
   var tsplibfile: String  = null
   var branchFac: Double = 0.0
+  var seed: Long = 0
   val lsFlagValues = Vector(1,2,3)
 
   def init(lsFlag: Int, nnLs: Int, nAnts: Int, nnAnts: Int, rho: Double, alpha: Double, beta: Double, q0: Double,
            maxTries: Int, maxTours: Int, maxTime: Double, optimal: Int, asFlag: Int, mmasFlag: Int, trailMax: Int,
-           trailMin: Int, ugb: Int, trail0: Double, rasRanks: Int, elitistsAnts: Int, tsplibfile: String, branchFac: Double): Unit = {
+           trailMin: Int, ugb: Int, trail0: Double, rasRanks: Int, elitistsAnts: Int, tsplibfile: String, branchFac: Double, seed: Long): Unit = {
     this.lsFlag = lsFlag
     this.nnLs = nnLs
     this.nAnts = nAnts
@@ -50,6 +51,7 @@ object ExecutionParameters {
     this.elitistsAnts = elitistsAnts
     this.tsplibfile = tsplibfile
     this.branchFac = branchFac
+    this.seed = seed
   }
 
 

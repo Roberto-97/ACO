@@ -1,7 +1,7 @@
 package Util
 
 import Entities.ExecutionParameters
-import org.rogach.scallop.{ScallopConf, intConverter, doubleConverter, flagConverter, stringConverter}
+import org.rogach.scallop.{ScallopConf, intConverter, doubleConverter, flagConverter, stringConverter, longConverter}
 
 class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
   val lsFlag = opt[Int](required = false, validate = _ > 0)
@@ -26,6 +26,7 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
   val elitistAnts = opt[Int](required = false, validate = _ > 0)
   val tsplibfile = opt[String](required = true)
   val branchFac = opt[Double](required = false, validate = _ > 0)
+  val seed = opt[Long](required = false, validate = _ > 0)
   verify()
 
   def setDefaultAsParameters(): Unit = {
@@ -84,7 +85,7 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
       maxTours.getOrElse(0), maxTime.getOrElse(10.0), optimal.getOrElse(1), asFlag.getOrElse(0),
         mmasFlag.getOrElse(1), trailMax.getOrElse(0), trailMix.getOrElse(0), ugb.getOrElse(Int.MaxValue),
       trail0.getOrElse(0.0), rasRanks.getOrElse(0), elitistAnts.getOrElse(0), tsplibfile.apply(),
-        branchFac.getOrElse(1.00001))
+        branchFac.getOrElse(1.00001), seed.getOrElse(System.nanoTime()))
       setDefaultParameters()
   }
 

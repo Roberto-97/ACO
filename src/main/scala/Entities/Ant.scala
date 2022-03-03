@@ -31,15 +31,25 @@ class Ant{
 
   /****************************************************************************************************************************/
 
-  def initializeAnt(): Ant = {
+
+  def initializeTour(): Ant = {
     _tour = Vector.fill(numberCities + 1)(Option.empty)
+    this
+  }
+
+  def initializeVisited(): Ant = {
     _visited = Vector.fill(numberCities + 1)(false)
     this
   }
 
+  def initializeAnt(): Ant = {
+    initializeVisited()
+    initializeTour()
+    this
+  }
+
   def randomInitialPlaceAnt(): Ant = {
-    val r = new scala.util.Random
-    val random = r.nextInt(numberCities)
+    val random = randomNumber.nextInt(numberCities)
     _tour = _tour.updated(0, Option(random))
     _visited = _visited.updated(random, true)
     this
@@ -51,11 +61,10 @@ class Ant{
   }
 
   def calculateProb(sumProb: Double, probPtr: Vector[Double], step: Int, currentCity: Integer): Ant = {
-    var random = new Random().nextDouble()
-    var partialSum = 0.0
+    var random = randomNumber.nextDouble()
     random *= sumProb
     var i = 0
-    partialSum = probPtr(i)
+    var partialSum = probPtr(i)
     while (partialSum <= random) {
       i+=1
       partialSum += probPtr(i)
@@ -124,7 +133,7 @@ class Ant{
     var sumProb = 0.0
     var probPtr = probOfSelection
 
-    if ((q0 > 0.0) && (new Random().nextDouble() < q0)) {
+    if ((q0 > 0.0) && (randomNumber.nextDouble() < q0)) {
       /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
       return neighbourChooseBestNext(step)
     }
