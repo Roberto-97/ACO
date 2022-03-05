@@ -6,6 +6,7 @@ import Entities.DistanceStrategies.DistanceStrategies
 import Entities.DistanceStrategies.{AttDistance, CeilDistance, GeoDistance, RoundDistance}
 import Entities.{Aco, Ant, ExecutionParameters, LocalSearch, Tsp}
 import Util.Timer.{elapsedTime, startTimer}
+import java.io.{BufferedWriter, File, FileWriter}
 
 import scala.io.Source
 import Entities.Tsp.*
@@ -226,8 +227,24 @@ object InOut {
   }
 
   def exitProgram(): Unit = {
+    writeReport()
+  }
+
+  def writeReport(): Unit = {
+    val file = new File("best."+name+".txt")
+    val outputFile = new BufferedWriter(new FileWriter(file))
+    writeParametersSettings(outputFile)
+    for (i <- 0 until maxTries){
+      outputFile.write("Try " + i + "\tBest " + _bestInTry(i).get + "\tIterations " + _bestFoundAt(i).get + "\tTime "
+        + _timeBestFound(i).get + "\tTot.time " + _timeTotalRun(i).get + "\n")
+    }
+    outputFile.write("\n\n")
     val bestTourLength = _bestInTry.minBy(_.get)
     val worstTourLength = _bestInTry.maxBy(_.get)
+    outputFile.write("Best try " + bestTourLength + "\t")
+    outputFile.write("Worst try " + worstTourLength + "\n")
+    outputFile.write("End problem : " + name)
+    outputFile.close()
     println("Best try: " + bestTourLength + " Worst try: " + worstTourLength)
     println("End problem " + name)
   }
@@ -245,6 +262,27 @@ object InOut {
   def printTour(tour: Vector[Option[Integer]]): Unit = {
     tour.map(city => println(""+ city))
     println("Tour Length = " + computeTourLength(tour))
+  }
+
+  def writeParametersSettings(output: BufferedWriter): Unit = {
+    output.write("Parameter-settings:\n\n")
+    output.write("maxTries -> " + maxTries + "\n")
+    output.write("maxTours -> " + maxTours + "\n")
+    output.write("maxTime -> " + maxTime + "\n")
+    output.write("seed -> " + seed + "\n")
+    output.write("optimum -> " + optimal + "\n")
+    output.write("nAnts -> " + nAnts + "\n")
+    output.write("nnAnts -> " + nnAnts + "\n")
+    output.write("alpha -> " + alpha + "\n")
+    output.write("beta -> " + beta + "\n")
+    output.write("rho -> " + rho + "\n")
+    output.write("q0 -> " + q0 + "\n")
+    output.write("elitistAnts -> " + elitistsAnts + "\n")
+    output.write("rasRanks -> " + rasRanks + "\n")
+    output.write("lsFlag -> " + lsFlag + "\n")
+    output.write("nnLs -> " + nnLs + "\n")
+    output.write("asFlag -> " + asFlag + "\n")
+    output.write("mmasFlag -> " + mmasFlag + "\n\n")
   }
 
   def printParameters(): Unit = {

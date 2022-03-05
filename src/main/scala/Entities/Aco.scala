@@ -158,7 +158,7 @@ object Aco {
 
   def terminationCondition(): Boolean = {
     nTours >= maxTours &&
-      (elapsedTime() >= maxTime || _bestSoFarAnt.tourLength <= optimal)
+      (elapsedTime() >= maxTime || _bestSoFarAnt.tourLength <= optimal || iteration > maxIterations)
   }
 
   def updateStatistics(): Unit = {
