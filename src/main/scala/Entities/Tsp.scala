@@ -1,12 +1,8 @@
 package Entities
 
-import Entities.Aco.*
 import Entities.DistanceStrategies.DistanceStrategies
-import Entities.ExecutionParameters.*
+import Entities.ExecutionParameters._
 
-import scala.collection.immutable.ListMap
-import scala.collection.mutable
-import scala.jdk.CollectionConverters.*
 import scala.util.Random
 
 object Tsp {

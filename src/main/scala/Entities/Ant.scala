@@ -1,13 +1,11 @@
 package Entities
 
-import scala.beans.BeanProperty
-import Entities.Tsp.*
-import Entities.Aco.*
-import Entities.ExecutionParameters.*
+import Entities.Aco.Aco
+import Entities.ExecutionParameters._
+import Entities.Tsp._
 
-import scala.util.Random
 
-class Ant{
+class Ant(var acoStrategy: Aco) extends Serializable {
   private var _tour: Vector[Option[Integer]] = Vector.empty
   private var _visited: Vector[Boolean] = Vector.empty
   private var _tourLength: Integer = null
@@ -49,7 +47,7 @@ class Ant{
   }
 
   def randomInitialPlaceAnt(): Ant = {
-    val random = randomNumber.nextInt(numberCities)
+    val random: Integer = randomNumber.nextInt(numberCities)
     _tour = _tour.updated(0, Option(random))
     _visited = _visited.updated(random, true)
     this
@@ -88,9 +86,9 @@ class Ant{
     var valueBest = -1.0
     (0 until numberCities).map((city) => {
       if (!_visited(city)) {
-        if (total(currentCity)(city) > valueBest) {
+        if (acoStrategy.total(currentCity)(city) > valueBest) {
           nextCity = city
-          valueBest = total(currentCity)(city)
+          valueBest = acoStrategy.total(currentCity)(city)
         }
       }
     })
@@ -109,7 +107,7 @@ class Ant{
     (0 until nnAnts).map((i) => {
       val helpCity = nearestNeighborsMatrix(currentCity)(i).get
       if (!_visited(helpCity)) {
-        val help = total(currentCity)(helpCity)
+        val help = acoStrategy.total(currentCity)(helpCity)
         if (help > valueBest) {
           valueBest = help
           nextCity = helpCity
@@ -131,7 +129,7 @@ class Ant{
   * */
   def neighbourChooseAndMoveToNext(step: Int): Ant = {
     var sumProb = 0.0
-    var probPtr = probOfSelection
+    var probPtr = acoStrategy.probOfSelection
 
     if ((q0 > 0.0) && (randomNumber.nextDouble() < q0)) {
       /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
@@ -143,7 +141,7 @@ class Ant{
       if (_visited(nearestNeighborsMatrix(currentCity)(i).get)){
         probPtr = probPtr.updated(i, 0.0) /* City already visited */
       } else {
-        probPtr = probPtr.updated(i, total(currentCity)(nearestNeighborsMatrix(currentCity)(i).get))
+        probPtr = probPtr.updated(i, acoStrategy.total(currentCity)(nearestNeighborsMatrix(currentCity)(i).get))
         sumProb += probPtr(i)
       }
     })
@@ -172,7 +170,7 @@ class Ant{
     updateTour(step, nextCity)
     this
   }
-  
+
   def computeTour(): Ant = {
     _tour = _tour.updated(numberCities, _tour(0))
     _tourLength = computeTourLength(_tour)

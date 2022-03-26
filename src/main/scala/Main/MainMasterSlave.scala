@@ -1,19 +1,20 @@
 package Main
 
-
-import Entities._
-import Util.Conf
-import Util.Timer.{elapsedTime, startTimer}
-import Entities.Aco.{Aco, AcoSec}
+import Entities.Aco.{Aco, AcoMasterSlave}
 import Util.InOut._
+import Entities.ExecutionParameters.{lsFlag, lsFlagValues, maxTries}
 import Entities.Tsp.computeNearestNeighborsMatrix
-import ExecutionParameters._
+import Util.Conf
+import Util.InOut.initProgram
+import Util.SparkConf.initializeSparkContext
+import Util.Timer.{elapsedTime, startTimer}
 
-object Main {
+object MainMasterSlave {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    val aco: Aco = new AcoSec()
+    val aco: Aco = new AcoMasterSlave()
+    initializeSparkContext()
     conf.build
     startTimer()
     initProgram(aco)
@@ -36,6 +37,5 @@ object Main {
     })
     exitProgram()
   }
-
 
 }

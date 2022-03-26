@@ -1,63 +1,66 @@
-package Entities
+package Entities.Aco
 
-import Entities.Aco.total
-import Entities.Tsp.*
-import Util.InOut.*
-import Util.Timer.{elapsedTime, startTimer}
+import Entities.Ant
+import Entities.ExecutionParameters._
+import Entities.Tsp._
+import Util.InOut._
+import Util.Timer.elapsedTime
 
-import scala.beans.BeanProperty
-import scala.language.postfixOps
-import ExecutionParameters.*
+trait Aco {
 
-object Aco {
-
-  private var _ants: Vector[Ant] = Vector.empty
-  private var _bestSoFarAnt: Ant = null
-  private var _restartBestAnt: Ant = null
+  protected var _ants: Vector[Ant] = Vector.empty
+  protected var _bestSoFarAnt: Ant = null
+  protected var _restartBestAnt: Ant = null
 
 
   private var _pheremone: Array[Array[Double]] = Array.empty
   private var _total: Array[Array[Double]] = Array.empty
-  private var _probOfSelection: Vector[Double] = Vector.empty
+  protected var _probOfSelection: Vector[Double] = Vector.empty
 
-  /************************************************* Setters && Getters *******************************************************/
+  /** *********************************************** Setters && Getters ****************************************************** */
 
   def ants = _ants
+
   def ants_=(ants: Vector[Ant]) = {
     _ants = ants
   }
 
   def bestSoFarAnt = _bestSoFarAnt
+
   def bestSoFarAnt_=(bestSoFarAnt: Ant) = {
     _bestSoFarAnt = bestSoFarAnt
   }
 
   def restartBestAnt = _restartBestAnt
+
   def restartBestAnt_=(restartBestAnt: Ant) = {
     _restartBestAnt = restartBestAnt
   }
 
   def total = _total
+
   def total_=(total: Array[Array[Double]]) = {
     _total = total
   }
 
   def pheremone = _pheremone
+
   def pheremone_=(pheremone: Array[Array[Double]]) = {
     _pheremone = pheremone
   }
 
   def probOfSelection = _probOfSelection
+
   def probOfSelection_=(probOfSelection: Vector[Double]) = {
     _probOfSelection = probOfSelection
   }
 
-  /****************************************************************************************************************************/
+  /** ************************************************************************************************************************* */
 
   def allocateAnts(): Unit = {
-    _ants = Vector.fill(nAnts)(new Ant().initializeTour())
-    _bestSoFarAnt = new Ant().initializeAnt()
-    _restartBestAnt = new Ant().initializeAnt()
+    _ants = Vector.fill(nAnts)(new Ant(this).initializeTour())
+    _bestSoFarAnt = new Ant(this).initializeAnt()
+    _restartBestAnt = new Ant(this).initializeAnt()
     _probOfSelection = Vector.fill(nnAnts + 1)(0.0)
     _probOfSelection = _probOfSelection.updated(nnAnts, Double.MaxValue)
   }
@@ -78,15 +81,7 @@ object Aco {
     _ants = _ants.map(ant => ant.computeTour())
   }
 
-  def constructSolutions(): Unit = {
-    /* Mark all cities as unvisited*/
-    initializeAnts()
-    /* Place the ants on same initial city*/
-    randomInitialPlaceAnt()
-    (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step))
-    computeTour()
-    nTours += nAnts
-  }
+  def constructSolutions()
 
   def initPheromoneTrails(initialTrail: Double): Unit = {
     println("Init trails with " + initialTrail)
@@ -125,7 +120,7 @@ object Aco {
   def searchControlAndStatistics(nTry: Int): Unit = {
     if (iteration % 100 == 0) {
       branchingFactor = nodeBranching(lambda)
-      println("Best so far " + _bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time "+ elapsedTime() + ", b_fac " + branchingFactor)
+      println("Best so far " + _bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
       if (mmasFlag != 0 && (branchingFactor < branchFac) && (iteration - restartFoundBest > 250)) {
         println("INIT TRAILS !!!")
         _restartBestAnt.tourLength = Int.MaxValue
@@ -174,7 +169,7 @@ object Aco {
       branchingFactor = foundBranching
       if (mmasFlag != 0) {
         if (!lsFlagValues.contains(lsFlag)) {
-          val px = Math.exp(Math.log(0.05)/numberCities)
+          val px = Math.exp(Math.log(0.05) / numberCities)
           trailMin = 1.0 * (1 - px) / (px * ((nnAnts + 1) / 2))
           trailMax = 1.0 / (rho * _bestSoFarAnt.tourLength)
           trail0 = trailMax
@@ -194,8 +189,8 @@ object Aco {
   }
 
   def evaporation(): Unit = {
-    for (i <- 0 until numberCities){
-      for (j <- 0 to i){
+    for (i <- 0 until numberCities) {
+      for (j <- 0 to i) {
         pheremone(i)(j) = (1 - rho) * pheremone(i)(j)
         pheremone(j)(i) = pheremone(i)(j)
       }
@@ -213,7 +208,7 @@ object Aco {
   }
 
   def checkPheromoneTrailLimits(): Unit = {
-    for ( i <- 0 until numberCities) {
+    for (i <- 0 until numberCities) {
       for (j <- 0 until i) {
         if (pheremone(i)(j) < trailMin) {
           pheremone(i)(j) = trailMin
@@ -251,7 +246,7 @@ object Aco {
 
     if (asFlag != 0) {
       asUpdate()
-    } else if (mmasFlag != 0){
+    } else if (mmasFlag != 0) {
       mmasUpdate()
     }
 
