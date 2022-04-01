@@ -5,7 +5,7 @@ import Entities.ExecutionParameters._
 import Entities.Tsp._
 
 
-class Ant(var acoStrategy: Aco) extends Serializable {
+class Ant() extends Serializable {
   private var _tour: Vector[Option[Integer]] = Vector.empty
   private var _visited: Vector[Boolean] = Vector.empty
   private var _tourLength: Integer = null
@@ -53,121 +53,9 @@ class Ant(var acoStrategy: Aco) extends Serializable {
     this
   }
 
-  def updateTour(step: Int, city: Integer): Unit = {
+  def updateTour(step: Int, city: Integer): Ant = {
     _tour = _tour.updated(step, Option(city))
     _visited = _visited.updated(city, true)
-  }
-
-  def calculateProb(sumProb: Double, probPtr: Vector[Double], step: Int, currentCity: Integer): Ant = {
-    var random = randomNumber.nextDouble()
-    random *= sumProb
-    var i = 0
-    var partialSum = probPtr(i)
-    while (partialSum <= random) {
-      i+=1
-      partialSum += probPtr(i)
-    }
-
-    if (i == nnAnts) {
-      return neighbourChooseBestNext(step)
-    }
-    val help = nearestNeighborsMatrix(currentCity)(i).get
-    updateTour(step, help)
-    this
-  }
-
-  /*
-  * chooses for an ant as the next city the one with
-  * maximal value of heuristic information times pheromone
-  * */
-  def chooseBestNext(step: Int): Ant = {
-    var nextCity = numberCities
-    val currentCity = _tour(step - 1).get
-    var valueBest = -1.0
-    (0 until numberCities).map((city) => {
-      if (!_visited(city)) {
-        if (acoStrategy.total(currentCity)(city) > valueBest) {
-          nextCity = city
-          valueBest = acoStrategy.total(currentCity)(city)
-        }
-      }
-    })
-    updateTour(step, nextCity)
-    this
-  }
-
-  /*
-  * chooses for an ant as the next city the one with
-  * maximal value of heuristic information times pheromone
-  */
-  def neighbourChooseBestNext(step: Int): Ant = {
-    var nextCity = numberCities
-    val currentCity = _tour(step - 1).get
-    var valueBest = -1.0
-    (0 until nnAnts).map((i) => {
-      val helpCity = nearestNeighborsMatrix(currentCity)(i).get
-      if (!_visited(helpCity)) {
-        val help = acoStrategy.total(currentCity)(helpCity)
-        if (help > valueBest) {
-          valueBest = help
-          nextCity = helpCity
-        }
-      }
-    })
-
-    if (nextCity == numberCities) {
-      return chooseBestNext(step)
-    } else {
-      updateTour(step, nextCity)
-    }
-    this
-  }
-
-  /*
-  * Choose for an ant probabilistically a next city among all unvisited cities
-  * in the current city's candidate list. If this is not possible, choose the closest next
-  * */
-  def neighbourChooseAndMoveToNext(step: Int): Ant = {
-    var sumProb = 0.0
-    var probPtr = acoStrategy.probOfSelection
-
-    if ((q0 > 0.0) && (randomNumber.nextDouble() < q0)) {
-      /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
-      return neighbourChooseBestNext(step)
-    }
-
-    val currentCity = _tour(step - 1).get
-    (0 until nnAnts).map((i) => {
-      if (_visited(nearestNeighborsMatrix(currentCity)(i).get)){
-        probPtr = probPtr.updated(i, 0.0) /* City already visited */
-      } else {
-        probPtr = probPtr.updated(i, acoStrategy.total(currentCity)(nearestNeighborsMatrix(currentCity)(i).get))
-        sumProb += probPtr(i)
-      }
-    })
-
-    if (sumProb <= 0.0){
-      /*All cities was visited*/
-      chooseBestNext(step)
-    } else {
-      /*At least one neighbor is eligible, chose one according to the selection probabilities*/
-      calculateProb(sumProb, probPtr, step, currentCity)
-    }
-  }
-
-  def chooseClosestNext(step: Int): Ant = {
-    var nextCity = numberCities
-    val currentCity = tour(step - 1)
-    var minDistance = Int.MaxValue
-    (0 until numberCities).map((city) => {
-      if (!_visited(city)) {
-        if (distance(currentCity.get)(city) < minDistance) {
-          nextCity = city
-          minDistance = distance(currentCity.get)(city)
-        }
-      }
-    })
-    updateTour(step, nextCity)
     this
   }
 

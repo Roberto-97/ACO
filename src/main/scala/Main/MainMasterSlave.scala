@@ -24,7 +24,7 @@ object MainMasterSlave {
     (0 until maxTries).map(nTry => {
       initTry(nTry)
       while (!aco.terminationCondition()) {
-        aco.constructSolutions()
+        aco.constructSolutions(aco)
         if (lsFlagValues.contains(lsFlag)) {
           /*TODO: localSearch()*/
         }

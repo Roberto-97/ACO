@@ -270,7 +270,7 @@ object InOut {
     if (Option(getSparkContext()).isEmpty) {
       file = new File("best."+name+".txt")
     } else {
-      file = new File("best-master-slave."+name+".txt")
+      file = new File("best-master-slave-" + getSparkContext().defaultParallelism + "-worker-"+name+".txt")
     }
     val outputFile = new BufferedWriter(new FileWriter(file))
     writeParametersSettings(outputFile)

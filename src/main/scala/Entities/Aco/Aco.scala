@@ -58,9 +58,9 @@ trait Aco {
   /** ************************************************************************************************************************* */
 
   def allocateAnts(): Unit = {
-    _ants = Vector.fill(nAnts)(new Ant(this).initializeTour())
-    _bestSoFarAnt = new Ant(this).initializeAnt()
-    _restartBestAnt = new Ant(this).initializeAnt()
+    _ants = Vector.fill(nAnts)(new Ant().initializeTour())
+    _bestSoFarAnt = new Ant().initializeAnt()
+    _restartBestAnt = new Ant().initializeAnt()
     _probOfSelection = Vector.fill(nnAnts + 1)(0.0)
     _probOfSelection = _probOfSelection.updated(nnAnts, Double.MaxValue)
   }
@@ -73,15 +73,15 @@ trait Aco {
     _ants = _ants.map(ant => ant.randomInitialPlaceAnt())
   }
 
-  def neighbourChooseAndMoveToNext(step: Int): Unit = {
-    _ants = _ants.map(ant => ant.neighbourChooseAndMoveToNext(step))
-  }
+//  def neighbourChooseAndMoveToNext(step: Int): Unit = {
+//    _ants = _ants.map(ant => ant.neighbourChooseAndMoveToNext(step))
+//  }
 
   def computeTour(): Unit = {
     _ants = _ants.map(ant => ant.computeTour())
   }
 
-  def constructSolutions()
+  def constructSolutions(aco: Aco)
 
   def initPheromoneTrails(initialTrail: Double): Unit = {
     println("Init trails with " + initialTrail)
@@ -99,12 +99,121 @@ trait Aco {
     }
   }
 
+  def calculateProb(sumProb: Double, probPtr: Vector[Double], step: Int, currentCity: Integer, ant: Ant): Ant = {
+    var random = randomNumber.nextDouble()
+    random *= sumProb
+    var i = 0
+    var partialSum = probPtr(i)
+    while (partialSum <= random) {
+      i+=1
+      partialSum += probPtr(i)
+    }
+
+    if (i == nnAnts) {
+      return neighbourChooseBestNext(step, ant)
+    }
+    val help = nearestNeighborsMatrix(currentCity)(i).get
+    ant.updateTour(step, help)
+  }
+
+  /*
+  * chooses for an ant as the next city the one with
+  * maximal value of heuristic information times pheromone
+  * */
+  def chooseBestNext(step: Int, ant: Ant): Ant = {
+    var nextCity = numberCities
+    val currentCity = ant.tour(step - 1).get
+    var valueBest = -1.0
+    (0 until numberCities).map((city) => {
+      if (!ant.visited(city)) {
+        if (total(currentCity)(city) > valueBest) {
+          nextCity = city
+          valueBest = total(currentCity)(city)
+        }
+      }
+    })
+    ant.updateTour(step, nextCity)
+  }
+
+  /*
+  * chooses for an ant as the next city the one with
+  * maximal value of heuristic information times pheromone
+  */
+  def neighbourChooseBestNext(step: Int, ant: Ant): Ant = {
+    var nextCity = numberCities
+    val currentCity = ant.tour(step - 1).get
+    var valueBest = -1.0
+    (0 until nnAnts).map((i) => {
+      val helpCity = nearestNeighborsMatrix(currentCity)(i).get
+      if (!ant.visited(helpCity)) {
+        val help = total(currentCity)(helpCity)
+        if (help > valueBest) {
+          valueBest = help
+          nextCity = helpCity
+        }
+      }
+    })
+
+    if (nextCity == numberCities) {
+      chooseBestNext(step, ant)
+    } else {
+      ant.updateTour(step, nextCity)
+    }
+  }
+
+  /*
+  * Choose for an ant probabilistically a next city among all unvisited cities
+  * in the current city's candidate list. If this is not possible, choose the closest next
+  * */
+  def neighbourChooseAndMoveToNext(step: Int, ant: Ant): Ant = {
+    var sumProb = 0.0
+    var probPtr = Vector.fill(nnAnts + 1)(0.0).updated(nnAnts, Double.MaxValue)
+
+    if ((q0 > 0.0) && (randomNumber.nextDouble() < q0)) {
+      /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
+      return neighbourChooseBestNext(step, ant)
+    }
+
+    val currentCity = ant.tour(step - 1).get
+    (0 until nnAnts).map((i) => {
+      if (ant.visited(nearestNeighborsMatrix(currentCity)(i).get)){
+        probPtr = probPtr.updated(i, 0.0) /* City already visited */
+      } else {
+        probPtr = probPtr.updated(i, total(currentCity)(nearestNeighborsMatrix(currentCity)(i).get))
+        sumProb += probPtr(i)
+      }
+    })
+
+    if (sumProb <= 0.0){
+      /*All cities was visited*/
+      chooseBestNext(step, ant)
+    } else {
+      /*At least one neighbor is eligible, chose one according to the selection probabilities*/
+      calculateProb(sumProb, probPtr, step, currentCity, ant)
+    }
+  }
+
+  def chooseClosestNext(step: Int, ant: Ant): Ant = {
+    var nextCity = numberCities
+    val currentCity = ant.tour(step - 1)
+    var minDistance = Int.MaxValue
+    (0 until numberCities).map((city) => {
+      if (!ant.visited(city)) {
+        if (distance(currentCity.get)(city) < minDistance) {
+          nextCity = city
+          minDistance = distance(currentCity.get)(city)
+        }
+      }
+    })
+    ant.updateTour(step, nextCity)
+  }
+
   def nnTour(): Int = {
     _ants(0).initializeVisited()
     _ants(0).randomInitialPlaceAnt()
 
     (1 until numberCities).map((step) => {
-      _ants(0).chooseClosestNext(step)
+      _ants= _ants.updated(0,chooseClosestNext(step, _ants(0)))
     })
     _ants(0).tour = _ants(0).tour.updated(numberCities, _ants(0).tour(0))
     if (lsFlagValues.contains(lsFlag)) {
