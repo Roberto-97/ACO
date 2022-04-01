@@ -129,7 +129,8 @@ class Ant(var acoStrategy: Aco) extends Serializable {
   * */
   def neighbourChooseAndMoveToNext(step: Int): Ant = {
     var sumProb = 0.0
-    var probPtr = acoStrategy.probOfSelection
+    var probPtr = Array.fill(nnAnts)(0.0)
+      acoStrategy.probOfSelection.copyToArray(probPtr)
 
     if ((q0 > 0.0) && (randomNumber.nextDouble() < q0)) {
       /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
@@ -151,7 +152,7 @@ class Ant(var acoStrategy: Aco) extends Serializable {
       chooseBestNext(step)
     } else {
       /*At least one neighbor is eligible, chose one according to the selection probabilities*/
-      calculateProb(sumProb, probPtr, step, currentCity)
+      calculateProb(sumProb, probPtr.toVector, step, currentCity)
     }
   }
 
