@@ -1,9 +1,9 @@
 package Util
 
 import Entities.ExecutionParameters
-import org.rogach.scallop.{ScallopConf, intConverter, doubleConverter, flagConverter, stringConverter, longConverter}
+import org.rogach.scallop.{ScallopConf, doubleConverter, intConverter, longConverter, stringConverter}
 
-class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
+class Conf(args: Seq[String]) extends ScallopConf(args) with Serializable {
   val lsFlag = opt[Int](required = false, validate = _ > 0)
   val nnLs = opt[Int](required = false, validate = _ > 0)
   val numberAnts = opt[Int](required = false, validate = _ > 0)
@@ -28,6 +28,7 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
   val branchFac = opt[Double](required = false, validate = _ > 0)
   val seed = opt[Long](required = false, validate = _ > 0)
   val maxIterations = opt[Int](required = false, validate = _ > 0)
+  val coloniesIterations = opt[Int](required = false, validate = _ > 0)
   verify()
 
   def setDefaultAsParameters(): Unit = {
@@ -80,14 +81,14 @@ class Conf (args: Seq[String]) extends ScallopConf(args) with Serializable{
   }
 
   def build: Unit = {
-      ExecutionParameters.init(lsFlag.getOrElse(0), nnLs.getOrElse(20),
+    ExecutionParameters.init(lsFlag.getOrElse(0), nnLs.getOrElse(20),
       numberAnts.getOrElse(25), numberNeighboursAnts.getOrElse(20), rho.getOrElse(0.5),
       alpha.getOrElse(1.0), beta.getOrElse(2.0), q0.getOrElse(0.0), maxTries.getOrElse(10),
       maxTours.getOrElse(0), maxTime.getOrElse(10.0), optimal.getOrElse(1), asFlag.getOrElse(0),
-        mmasFlag.getOrElse(1), trailMax.getOrElse(0), trailMix.getOrElse(0), ugb.getOrElse(Int.MaxValue),
+      mmasFlag.getOrElse(1), trailMax.getOrElse(0), trailMix.getOrElse(0), ugb.getOrElse(Int.MaxValue),
       trail0.getOrElse(0.0), rasRanks.getOrElse(0), elitistAnts.getOrElse(0), tsplibfile.apply(),
-        branchFac.getOrElse(1.00001), seed.getOrElse(System.nanoTime()), maxIterations.getOrElse(1000))
-      setDefaultParameters()
+      branchFac.getOrElse(1.00001), seed.getOrElse(System.nanoTime()), maxIterations.getOrElse(1000), coloniesIterations.getOrElse(10))
+    setDefaultParameters()
   }
 
 

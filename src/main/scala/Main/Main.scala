@@ -1,13 +1,13 @@
 package Main
 
 
+import Entities.Aco.{Aco, AcoSec}
+import Entities.ExecutionParameters._
+import Entities.Tsp.computeNearestNeighborsMatrix
 import Entities._
 import Util.Conf
-import Util.Timer.{elapsedTime, startTimer}
-import Entities.Aco.{Aco, AcoSec}
 import Util.InOut._
-import Entities.Tsp.computeNearestNeighborsMatrix
-import ExecutionParameters._
+import Util.Timer.{elapsedTime, startTimer}
 
 object Main {
 
@@ -34,7 +34,7 @@ object Main {
       }
       exitTry(nTry)
     })
-    exitProgram()
+    exitProgram(false)
   }
 
 

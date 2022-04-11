@@ -1,11 +1,10 @@
 package Main
 
 import Entities.Aco.{Aco, AcoMasterSlave}
-import Util.InOut._
 import Entities.ExecutionParameters.{lsFlag, lsFlagValues, maxTries}
 import Entities.Tsp.computeNearestNeighborsMatrix
 import Util.Conf
-import Util.InOut.initProgram
+import Util.InOut._
 import Util.SparkConf.initializeSparkContext
 import Util.Timer.{elapsedTime, startTimer}
 
@@ -35,7 +34,7 @@ object MainMasterSlave {
       }
       exitTry(nTry)
     })
-    exitProgram()
+    exitProgram(false)
   }
 
 }

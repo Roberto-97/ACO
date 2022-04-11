@@ -261,20 +261,24 @@ object InOut {
     }
   }
 
-  def exitProgram(): Unit = {
-    writeReport()
+  def exitProgram(isColonies: Boolean): Unit = {
+    writeReport(isColonies)
   }
 
-  def writeReport(): Unit = {
+  def writeReport(isColonies: Boolean): Unit = {
     var file: File = null
     if (Option(getSparkContext()).isEmpty) {
-      file = new File("best."+name+".txt")
+      file = new File("best." + name + ".txt")
     } else {
-      file = new File("best-master-slave-" + getSparkContext().defaultParallelism + "-worker-"+name+".txt")
+      if (isColonies) {
+        file = new File("best-colonies-" + getSparkContext().defaultParallelism + "-worker-" + name + ".txt")
+      } else {
+        file = new File("best-master-slave-" + getSparkContext().defaultParallelism + "-worker-" + name + ".txt")
+      }
     }
     val outputFile = new BufferedWriter(new FileWriter(file))
     writeParametersSettings(outputFile)
-    for (i <- 0 until maxTries){
+    for (i <- 0 until maxTries) {
       outputFile.write("Try " + i + "\tBest " + _bestInTry(i).get + "\tIterations " + _bestFoundAt(i).get + "\tTime "
         + _timeBestFound(i).get + "\tTot.time " + _timeTotalRun(i).get + "\n")
     }

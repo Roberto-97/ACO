@@ -21,16 +21,17 @@ object ExecutionParameters {
   var trail0: Double = 0
   var rasRanks: Int = 0
   var elitistsAnts: Int = 0
-  var tsplibfile: String  = null
+  var tsplibfile: String = null
   var branchFac: Double = 0.0
   var seed: Long = 0
   var maxIterations: Int = 0
-  val lsFlagValues = Vector(1,2,3)
+  val lsFlagValues = Vector(1, 2, 3)
+  var coloniesIterations: Int = 10
 
   def init(lsFlag: Int, nnLs: Int, nAnts: Int, nnAnts: Int, rho: Double, alpha: Double, beta: Double, q0: Double,
            maxTries: Int, maxTours: Int, maxTime: Double, optimal: Int, asFlag: Int, mmasFlag: Int, trailMax: Int,
            trailMin: Int, ugb: Int, trail0: Double, rasRanks: Int, elitistsAnts: Int, tsplibfile: String,
-           branchFac: Double, seed: Long, maxIterations: Int): Unit = {
+           branchFac: Double, seed: Long, maxIterations: Int, coloniesIterations: Int): Unit = {
     this.lsFlag = lsFlag
     this.nnLs = nnLs
     this.nAnts = nAnts
@@ -55,6 +56,7 @@ object ExecutionParameters {
     this.branchFac = branchFac
     this.seed = seed
     this.maxIterations = maxIterations
+    this.coloniesIterations = coloniesIterations
   }
 
 

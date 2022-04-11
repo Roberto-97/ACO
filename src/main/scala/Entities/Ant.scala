@@ -1,7 +1,5 @@
 package Entities
 
-import Entities.Aco.Aco
-import Entities.ExecutionParameters._
 import Entities.Tsp._
 
 
@@ -10,24 +8,27 @@ class Ant() extends Serializable {
   private var _visited: Vector[Boolean] = Vector.empty
   private var _tourLength: Integer = null
 
-  /************************************************* Setters && Getters *******************************************************/
+  /** *********************************************** Setters && Getters ****************************************************** */
 
   def tour = _tour
-  def tour_=(tour:Vector[Option[Integer]]) = {
+
+  def tour_=(tour: Vector[Option[Integer]]) = {
     _tour = tour
   }
 
   def tourLength = _tourLength
+
   def tourLength_=(tourLength: Integer) = {
     _tourLength = tourLength
   }
 
   def visited = _visited
-  def visited_=(visited:  Vector[Boolean]) = {
+
+  def visited_=(visited: Vector[Boolean]) = {
     _visited = visited
   }
 
-  /****************************************************************************************************************************/
+  /** ************************************************************************************************************************* */
 
 
   def initializeTour(): Ant = {
@@ -70,7 +71,6 @@ class Ant() extends Serializable {
     antToClone._tour = _tour
     antToClone._visited = _visited
   }
-
 
 
 }
