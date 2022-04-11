@@ -1,58 +1,61 @@
-package Entities
+package Entities.Aco
 
-import Entities.Aco.total
-import Entities.Tsp.*
-import Util.InOut.*
-import Util.Timer.{elapsedTime, startTimer}
+import Entities.Ant
+import Entities.ExecutionParameters._
+import Entities.Tsp._
+import Util.InOut._
+import Util.Timer.elapsedTime
 
-import scala.beans.BeanProperty
-import scala.language.postfixOps
-import ExecutionParameters.*
+trait Aco {
 
-object Aco {
-
-  private var _ants: Vector[Ant] = Vector.empty
-  private var _bestSoFarAnt: Ant = null
-  private var _restartBestAnt: Ant = null
+  protected var _ants: Vector[Ant] = Vector.empty
+  protected var _bestSoFarAnt: Ant = null
+  protected var _restartBestAnt: Ant = null
 
 
   private var _pheremone: Array[Array[Double]] = Array.empty
   private var _total: Array[Array[Double]] = Array.empty
-  private var _probOfSelection: Vector[Double] = Vector.empty
+  protected var _probOfSelection: Vector[Double] = Vector.empty
 
-  /************************************************* Setters && Getters *******************************************************/
+  /** *********************************************** Setters && Getters ****************************************************** */
 
   def ants = _ants
+
   def ants_=(ants: Vector[Ant]) = {
     _ants = ants
   }
 
   def bestSoFarAnt = _bestSoFarAnt
+
   def bestSoFarAnt_=(bestSoFarAnt: Ant) = {
     _bestSoFarAnt = bestSoFarAnt
   }
 
   def restartBestAnt = _restartBestAnt
+
   def restartBestAnt_=(restartBestAnt: Ant) = {
     _restartBestAnt = restartBestAnt
   }
 
   def total = _total
+
   def total_=(total: Array[Array[Double]]) = {
     _total = total
   }
 
   def pheremone = _pheremone
+
   def pheremone_=(pheremone: Array[Array[Double]]) = {
     _pheremone = pheremone
   }
 
   def probOfSelection = _probOfSelection
+
   def probOfSelection_=(probOfSelection: Vector[Double]) = {
     _probOfSelection = probOfSelection
   }
 
-  /****************************************************************************************************************************/
+  /** ************************************************************************************************************************* */
 
   def allocateAnts(): Unit = {
     _ants = Vector.fill(nAnts)(new Ant().initializeTour())
@@ -70,23 +73,15 @@ object Aco {
     _ants = _ants.map(ant => ant.randomInitialPlaceAnt())
   }
 
-  def neighbourChooseAndMoveToNext(step: Int): Unit = {
-    _ants = _ants.map(ant => ant.neighbourChooseAndMoveToNext(step))
-  }
+//  def neighbourChooseAndMoveToNext(step: Int): Unit = {
+//    _ants = _ants.map(ant => ant.neighbourChooseAndMoveToNext(step))
+//  }
 
   def computeTour(): Unit = {
     _ants = _ants.map(ant => ant.computeTour())
   }
 
-  def constructSolutions(): Unit = {
-    /* Mark all cities as unvisited*/
-    initializeAnts()
-    /* Place the ants on same initial city*/
-    randomInitialPlaceAnt()
-    (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step))
-    computeTour()
-    nTours += nAnts
-  }
+  def constructSolutions(aco: Aco)
 
   def initPheromoneTrails(initialTrail: Double): Unit = {
     println("Init trails with " + initialTrail)
@@ -104,12 +99,121 @@ object Aco {
     }
   }
 
+  def calculateProb(sumProb: Double, probPtr: Vector[Double], step: Int, currentCity: Integer, ant: Ant): Ant = {
+    var random = randomNumber.nextDouble()
+    random *= sumProb
+    var i = 0
+    var partialSum = probPtr(i)
+    while (partialSum <= random) {
+      i+=1
+      partialSum += probPtr(i)
+    }
+
+    if (i == nnAnts) {
+      return neighbourChooseBestNext(step, ant)
+    }
+    val help = nearestNeighborsMatrix(currentCity)(i).get
+    ant.updateTour(step, help)
+  }
+
+  /*
+  * chooses for an ant as the next city the one with
+  * maximal value of heuristic information times pheromone
+  * */
+  def chooseBestNext(step: Int, ant: Ant): Ant = {
+    var nextCity = numberCities
+    val currentCity = ant.tour(step - 1).get
+    var valueBest = -1.0
+    (0 until numberCities).map((city) => {
+      if (!ant.visited(city)) {
+        if (total(currentCity)(city) > valueBest) {
+          nextCity = city
+          valueBest = total(currentCity)(city)
+        }
+      }
+    })
+    ant.updateTour(step, nextCity)
+  }
+
+  /*
+  * chooses for an ant as the next city the one with
+  * maximal value of heuristic information times pheromone
+  */
+  def neighbourChooseBestNext(step: Int, ant: Ant): Ant = {
+    var nextCity = numberCities
+    val currentCity = ant.tour(step - 1).get
+    var valueBest = -1.0
+    (0 until nnAnts).map((i) => {
+      val helpCity = nearestNeighborsMatrix(currentCity)(i).get
+      if (!ant.visited(helpCity)) {
+        val help = total(currentCity)(helpCity)
+        if (help > valueBest) {
+          valueBest = help
+          nextCity = helpCity
+        }
+      }
+    })
+
+    if (nextCity == numberCities) {
+      chooseBestNext(step, ant)
+    } else {
+      ant.updateTour(step, nextCity)
+    }
+  }
+
+  /*
+  * Choose for an ant probabilistically a next city among all unvisited cities
+  * in the current city's candidate list. If this is not possible, choose the closest next
+  * */
+  def neighbourChooseAndMoveToNext(step: Int, ant: Ant): Ant = {
+    var sumProb = 0.0
+    var probPtr = Vector.fill(nnAnts + 1)(0.0).updated(nnAnts, Double.MaxValue)
+
+    if ((q0 > 0.0) && (randomNumber.nextDouble() < q0)) {
+      /* with a probability q0 make the best possible choice according to pheremone trails and heuristic information*/
+      return neighbourChooseBestNext(step, ant)
+    }
+
+    val currentCity = ant.tour(step - 1).get
+    (0 until nnAnts).map((i) => {
+      if (ant.visited(nearestNeighborsMatrix(currentCity)(i).get)){
+        probPtr = probPtr.updated(i, 0.0) /* City already visited */
+      } else {
+        probPtr = probPtr.updated(i, total(currentCity)(nearestNeighborsMatrix(currentCity)(i).get))
+        sumProb += probPtr(i)
+      }
+    })
+
+    if (sumProb <= 0.0){
+      /*All cities was visited*/
+      chooseBestNext(step, ant)
+    } else {
+      /*At least one neighbor is eligible, chose one according to the selection probabilities*/
+      calculateProb(sumProb, probPtr, step, currentCity, ant)
+    }
+  }
+
+  def chooseClosestNext(step: Int, ant: Ant): Ant = {
+    var nextCity = numberCities
+    val currentCity = ant.tour(step - 1)
+    var minDistance = Int.MaxValue
+    (0 until numberCities).map((city) => {
+      if (!ant.visited(city)) {
+        if (distance(currentCity.get)(city) < minDistance) {
+          nextCity = city
+          minDistance = distance(currentCity.get)(city)
+        }
+      }
+    })
+    ant.updateTour(step, nextCity)
+  }
+
   def nnTour(): Int = {
     _ants(0).initializeVisited()
     _ants(0).randomInitialPlaceAnt()
 
     (1 until numberCities).map((step) => {
-      _ants(0).chooseClosestNext(step)
+      _ants= _ants.updated(0,chooseClosestNext(step, _ants(0)))
     })
     _ants(0).tour = _ants(0).tour.updated(numberCities, _ants(0).tour(0))
     if (lsFlagValues.contains(lsFlag)) {
@@ -125,7 +229,7 @@ object Aco {
   def searchControlAndStatistics(nTry: Int): Unit = {
     if (iteration % 100 == 0) {
       branchingFactor = nodeBranching(lambda)
-      println("Best so far " + _bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time "+ elapsedTime() + ", b_fac " + branchingFactor)
+      println("Best so far " + _bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
       if (mmasFlag != 0 && (branchingFactor < branchFac) && (iteration - restartFoundBest > 250)) {
         println("INIT TRAILS !!!")
         _restartBestAnt.tourLength = Int.MaxValue
@@ -174,7 +278,7 @@ object Aco {
       branchingFactor = foundBranching
       if (mmasFlag != 0) {
         if (!lsFlagValues.contains(lsFlag)) {
-          val px = Math.exp(Math.log(0.05)/numberCities)
+          val px = Math.exp(Math.log(0.05) / numberCities)
           trailMin = 1.0 * (1 - px) / (px * ((nnAnts + 1) / 2))
           trailMax = 1.0 / (rho * _bestSoFarAnt.tourLength)
           trail0 = trailMax
@@ -194,8 +298,8 @@ object Aco {
   }
 
   def evaporation(): Unit = {
-    for (i <- 0 until numberCities){
-      for (j <- 0 to i){
+    for (i <- 0 until numberCities) {
+      for (j <- 0 to i) {
         pheremone(i)(j) = (1 - rho) * pheremone(i)(j)
         pheremone(j)(i) = pheremone(i)(j)
       }
@@ -213,7 +317,7 @@ object Aco {
   }
 
   def checkPheromoneTrailLimits(): Unit = {
-    for ( i <- 0 until numberCities) {
+    for (i <- 0 until numberCities) {
       for (j <- 0 until i) {
         if (pheremone(i)(j) < trailMin) {
           pheremone(i)(j) = trailMin
@@ -251,7 +355,7 @@ object Aco {
 
     if (asFlag != 0) {
       asUpdate()
-    } else if (mmasFlag != 0){
+    } else if (mmasFlag != 0) {
       mmasUpdate()
     }
 

@@ -1,6 +1,5 @@
 package Entities.DistanceStrategies
 
-import Entities.DistanceStrategies.DistanceStrategies
 import Entities.Tsp.nodeptr
 
 class RoundDistance extends DistanceStrategies {
