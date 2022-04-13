@@ -73,15 +73,19 @@ trait Aco {
     _ants = _ants.map(ant => ant.randomInitialPlaceAnt())
   }
 
-//  def neighbourChooseAndMoveToNext(step: Int): Unit = {
-//    _ants = _ants.map(ant => ant.neighbourChooseAndMoveToNext(step))
-//  }
-
   def computeTour(): Unit = {
     _ants = _ants.map(ant => ant.computeTour())
   }
 
   def constructSolutions(aco: Aco)
+
+  def updateStatisticsMaster(bestAntColonie: Ant)
+
+  def mmasUpdateMaster(): Unit
+
+  def pheromoneTrailUpdateMaster(): Unit
+
+  def searchControlAndStatisticsMaster(nTry: Int): Unit
 
   def initPheromoneTrails(initialTrail: Double): Unit = {
     println("Init trails with " + initialTrail)
@@ -105,7 +109,7 @@ trait Aco {
     var i = 0
     var partialSum = probPtr(i)
     while (partialSum <= random) {
-      i+=1
+      i += 1
       partialSum += probPtr(i)
     }
 
@@ -176,7 +180,7 @@ trait Aco {
 
     val currentCity = ant.tour(step - 1).get
     (0 until nnAnts).map((i) => {
-      if (ant.visited(nearestNeighborsMatrix(currentCity)(i).get)){
+      if (ant.visited(nearestNeighborsMatrix(currentCity)(i).get)) {
         probPtr = probPtr.updated(i, 0.0) /* City already visited */
       } else {
         probPtr = probPtr.updated(i, total(currentCity)(nearestNeighborsMatrix(currentCity)(i).get))
@@ -184,7 +188,7 @@ trait Aco {
       }
     })
 
-    if (sumProb <= 0.0){
+    if (sumProb <= 0.0) {
       /*All cities was visited*/
       chooseBestNext(step, ant)
     } else {
@@ -213,7 +217,7 @@ trait Aco {
     _ants(0).randomInitialPlaceAnt()
 
     (1 until numberCities).map((step) => {
-      _ants= _ants.updated(0,chooseClosestNext(step, _ants(0)))
+      _ants = _ants.updated(0, chooseClosestNext(step, _ants(0)))
     })
     _ants(0).tour = _ants(0).tour.updated(numberCities, _ants(0).tour(0))
     if (lsFlagValues.contains(lsFlag)) {
@@ -265,30 +269,34 @@ trait Aco {
       (elapsedTime() >= maxTime || _bestSoFarAnt.tourLength <= optimal || iteration > maxIterations)
   }
 
+  def updateCommonStats(): Unit = {
+    timeUsed = elapsedTime()
+    foundBest = iteration
+    restartFoundBest = iteration
+    foundBranching = nodeBranching(lambda)
+    branchingFactor = foundBranching
+    if (mmasFlag != 0) {
+      if (!lsFlagValues.contains(lsFlag)) {
+        val px = Math.exp(Math.log(0.05) / numberCities)
+        trailMin = 1.0 * (1 - px) / (px * ((nnAnts + 1) / 2))
+        trailMax = 1.0 / (rho * _bestSoFarAnt.tourLength)
+        trail0 = trailMax
+        trailMin = trailMax * trailMin
+      } else {
+        trailMax = 1.0 / (rho * _bestSoFarAnt.tourLength)
+        trailMin = trailMax / (2 * numberCities)
+        trail0 = trailMax
+      }
+    }
+  }
+
   def updateStatistics(): Unit = {
     var iterationBestAntIter: Integer = null
     iterationBestAntIter = findBest()
     if (_ants(iterationBestAntIter).tourLength < _bestSoFarAnt.tourLength) {
-      timeUsed = elapsedTime()
       _ants(iterationBestAntIter).clone(_bestSoFarAnt)
       _ants(iterationBestAntIter).clone(_restartBestAnt)
-      foundBest = iteration
-      restartFoundBest = iteration
-      foundBranching = nodeBranching(lambda)
-      branchingFactor = foundBranching
-      if (mmasFlag != 0) {
-        if (!lsFlagValues.contains(lsFlag)) {
-          val px = Math.exp(Math.log(0.05) / numberCities)
-          trailMin = 1.0 * (1 - px) / (px * ((nnAnts + 1) / 2))
-          trailMax = 1.0 / (rho * _bestSoFarAnt.tourLength)
-          trail0 = trailMax
-          trailMin = trailMax * trailMin
-        } else {
-          trailMax = 1.0 / (rho * _bestSoFarAnt.tourLength)
-          trailMin = trailMax / (2 * numberCities)
-          trail0 = trailMax
-        }
-      }
+      updateCommonStats()
     }
     if (_ants(iterationBestAntIter).tourLength < _restartBestAnt.tourLength) {
       _ants(iterationBestAntIter).clone(_restartBestAnt)

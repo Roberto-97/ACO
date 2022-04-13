@@ -4,7 +4,6 @@ package Main
 import Entities.Aco.{Aco, AcoSec}
 import Entities.ExecutionParameters._
 import Entities.Tsp.computeNearestNeighborsMatrix
-import Entities._
 import Util.Conf
 import Util.InOut._
 import Util.Timer.{elapsedTime, startTimer}

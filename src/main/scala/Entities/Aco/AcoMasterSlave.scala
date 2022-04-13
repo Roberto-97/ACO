@@ -1,5 +1,6 @@
 package Entities.Aco
 
+import Entities.Ant
 import Entities.ExecutionParameters.{nAnts, seed}
 import Entities.Tsp.{numberCities, randomNumber}
 import Util.InOut.nTours
@@ -33,5 +34,11 @@ class AcoMasterSlave extends Aco with Serializable {
     nTours += nAnts
   }
 
+  override def updateStatisticsMaster(bestAntColonie: Ant): Unit = ???
 
+  override def mmasUpdateMaster(): Unit = ???
+
+  override def pheromoneTrailUpdateMaster(): Unit = ???
+
+  override def searchControlAndStatisticsMaster(nTry: Int): Unit = ???
 }

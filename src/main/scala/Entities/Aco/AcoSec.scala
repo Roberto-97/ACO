@@ -1,5 +1,6 @@
 package Entities.Aco
 
+import Entities.Ant
 import Entities.ExecutionParameters.nAnts
 import Entities.Tsp.numberCities
 import Util.InOut.nTours
@@ -24,4 +25,11 @@ class AcoSec extends Aco with Serializable {
     nTours += nAnts
   }
 
+  override def updateStatisticsMaster(bestAntColonie: Ant): Unit = ???
+
+  override def mmasUpdateMaster(): Unit = ???
+
+  override def pheromoneTrailUpdateMaster(): Unit = ???
+
+  override def searchControlAndStatisticsMaster(nTry: Int): Unit = ???
 }

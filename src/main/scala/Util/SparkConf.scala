@@ -7,8 +7,8 @@ object SparkConf {
   private var sparkContext: SparkContext = null
 
 
-  def initializeSparkContext(): Unit =  {
-    this.sparkConf = new SparkConf().setAppName("aco-spark").setMaster("local[4]")
+  def initializeSparkContext(): Unit = {
+    this.sparkConf = new SparkConf().setAppName("aco-spark").setMaster("local[1]")
     this.sparkContext = new SparkContext(this.sparkConf)
   }
 
