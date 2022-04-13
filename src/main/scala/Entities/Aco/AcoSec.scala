@@ -1,35 +1,35 @@
 package Entities.Aco
 
-import Entities.Ant
 import Entities.ExecutionParameters.nAnts
 import Entities.Tsp.numberCities
+import Entities.{Ant, Colonie}
 import Util.InOut.nTours
 
-class AcoSec extends Aco with Serializable {
+class AcoSec extends Aco {
 
-  def evaluateAnts(aco: Aco): Unit = {
-    _ants = _ants.map(ant => {
+  def evaluateAnts(colonie: Colonie): Unit = {
+    colonie.ants = colonie.ants.map(ant => {
       /* Mark all cities as unvisited*/
       ant.initializeVisited()
       /* Place the ants on same initial city*/
       ant.randomInitialPlaceAnt()
       /* Choose the nexts cities to visit*/
-      (1 until numberCities).map((step) => aco.neighbourChooseAndMoveToNext(step, ant))
+      (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step, ant, colonie))
       /* Compute tour length*/
       ant.computeTour()
     })
   }
 
-  def constructSolutions(aco: Aco): Unit = {
-    this.evaluateAnts(aco)
+  def constructSolutions(colonie: Colonie): Unit = {
+    this.evaluateAnts(colonie)
     nTours += nAnts
   }
 
-  override def updateStatisticsMaster(bestAntColonie: Ant): Unit = ???
+  override def updateStatisticsMaster(bestAntColonie: Ant, colonie: Colonie): Unit = ???
 
-  override def mmasUpdateMaster(): Unit = ???
+  override def mmasUpdateMaster(colonie: Colonie): Unit = ???
 
-  override def pheromoneTrailUpdateMaster(): Unit = ???
+  override def pheromoneTrailUpdateMaster(colonie: Colonie): Unit = ???
 
-  override def searchControlAndStatisticsMaster(nTry: Int): Unit = ???
+  override def searchControlAndStatisticsMaster(nTry: Int, colonie: Colonie): Unit = ???
 }

@@ -1,6 +1,7 @@
 package Util
 
-import Entities.Aco.Aco
+import Entities.Aco.AcoOperations
+import Entities.Colonie
 import Entities.DistanceStrategies._
 import Entities.ExecutionParameters._
 import Entities.Tsp._
@@ -32,7 +33,6 @@ object InOut {
   private var _foundBranching: Double = Double.NaN
   private var _branchingFactor: Double = Double.NaN
   protected var _timePassed: Double = Double.NaN
-  protected var _acoStrategy: Aco = null
 
   /** *********************************************** Setters && Getters ****************************************************** */
 
@@ -132,28 +132,24 @@ object InOut {
     _timePassed = timePassed
   }
 
-  def aco_=(aco: Aco): Unit = {
-    _acoStrategy = aco
-  }
-
   /** ************************************************************************************************************************* */
 
-  def nodeBranching(lambda: Double): Double = {
+  def nodeBranching(lambda: Double, colonie: Colonie): Double = {
     var numBranches = Vector.fill(numberCities)(0.0)
     (0 until numberCities).map((m) => {
-      var min = _acoStrategy.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
-      var max = _acoStrategy.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
+      var min = colonie.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
+      var max = colonie.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
       (1 until nnAnts).map(i => {
-        if (_acoStrategy.pheremone(m)(nearestNeighborsMatrix(m)(i).get) > max) {
-          max = _acoStrategy.pheremone(m)(nearestNeighborsMatrix(m)(i).get)
+        if (colonie.pheremone(m)(nearestNeighborsMatrix(m)(i).get) > max) {
+          max = colonie.pheremone(m)(nearestNeighborsMatrix(m)(i).get)
         }
-        if (_acoStrategy.pheremone(m)(nearestNeighborsMatrix(m)(i).get) < min) {
-          min = _acoStrategy.pheremone(m)(nearestNeighborsMatrix(m)(i).get)
+        if (colonie.pheremone(m)(nearestNeighborsMatrix(m)(i).get) < min) {
+          min = colonie.pheremone(m)(nearestNeighborsMatrix(m)(i).get)
         }
       })
       val cutoff = min + lambda * (max - min)
       (0 until nnAnts).map(i => {
-        if (_acoStrategy.pheremone(m)(nearestNeighborsMatrix(m)(i).get) > cutoff)
+        if (colonie.pheremone(m)(nearestNeighborsMatrix(m)(i).get) > cutoff)
           numBranches = numBranches.updated(m, numBranches(m) + 1.0)
       })
     })
@@ -161,7 +157,7 @@ object InOut {
     avg / (numberCities * 2)
   }
 
-  def initProgram(acoStrategy: Aco): Unit = {
+  def initProgram(colonie: Colonie): Unit = {
     initializeParams()
     readEtsp(tsplibfile)
     if (nAnts < 0)
@@ -169,8 +165,7 @@ object InOut {
 
     nnLs = (numberCities - 1).min(nnLs)
 
-    _acoStrategy = acoStrategy
-    _acoStrategy.allocateAnts()
+    colonie.allocateAnts()
 
     println("Calculating distance matrix ..")
     computeDistances()
@@ -178,11 +173,11 @@ object InOut {
     printParameters()
   }
 
-  def exitTry(nTry: Int): Unit = {
-    checkTour(_acoStrategy.bestSoFarAnt.tour)
-    println("Best Solution in try " + nTry + " is " + _acoStrategy.bestSoFarAnt.tourLength)
+  def exitTry(nTry: Int, colonie: Colonie): Unit = {
+    checkTour(colonie.bestSoFarAnt.tour)
+    println("Best Solution in try " + nTry + " is " + colonie.bestSoFarAnt.tourLength)
     println("Best Solution was found after " + _foundBest + " iterations")
-    _bestInTry = _bestInTry.updated(nTry, Option(_acoStrategy.bestSoFarAnt.tourLength.toInt))
+    _bestInTry = _bestInTry.updated(nTry, Option(colonie.bestSoFarAnt.tourLength.toInt))
     _bestFoundAt = _bestFoundAt.updated(nTry, Option(_foundBest))
     _timeBestFound = _timeBestFound.updated(nTry, Option(_timeUsed))
     _timeTotalRun = _timeTotalRun.updated(nTry, Option(elapsedTime()))
@@ -190,7 +185,7 @@ object InOut {
     println("End try")
   }
 
-  def initTry(nTry: Int): Unit = {
+  def initTry(nTry: Int, colonie: Colonie): Unit = {
     println("INITIALIZE TRIAL")
     startTimer()
     _timeUsed = elapsedTime()
@@ -201,20 +196,20 @@ object InOut {
     _iteration = 1
     _restartIteration = 1
     _lambda = 0.05
-    _acoStrategy.bestSoFarAnt.tourLength = Int.MaxValue
+    colonie.bestSoFarAnt.tourLength = Int.MaxValue
     _foundBest = 0
 
     if (mmasFlag == 0) {
-      trail0 = 1.0 / (rho * _acoStrategy.nnTour())
-      _acoStrategy.initPheromoneTrails(trail0)
+      trail0 = 1.0 / (rho * AcoOperations.nnTour(colonie))
+      colonie.initPheromoneTrails(trail0)
     } else {
-      trailMax = 1.0 / (rho * _acoStrategy.nnTour())
+      trailMax = 1.0 / (rho * AcoOperations.nnTour(colonie))
       trailMin = trailMax / (2 * numberCities)
-      _acoStrategy.initPheromoneTrails(trailMax)
+      colonie.initPheromoneTrails(trailMax)
     }
 
     /* Calculate combined information pheromone times heuristic information*/
-    _acoStrategy.computeTotalInformation()
+    colonie.computeTotalInformation()
 
     println("Begin try " + nTry + " \n")
   }

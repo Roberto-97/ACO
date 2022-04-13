@@ -1,86 +1,86 @@
 package Entities.Aco
 
-import Entities.Ant
 import Entities.ExecutionParameters._
 import Entities.Tsp.numberCities
+import Entities.{Ant, Colonie}
 import Util.InOut._
 import Util.Timer.elapsedTime
 
-class AcoColonies extends Aco with Serializable {
+class AcoColonies extends Aco {
 
-  def evaluateAnts(aco: Aco): Unit = {
-    _ants = _ants.map(ant => {
+  def evaluateAnts(colonie: Colonie): Unit = {
+    colonie.ants = colonie.ants.map(ant => {
       /* Mark all cities as unvisited*/
       ant.initializeVisited()
       /* Place the ants on same initial city*/
       ant.randomInitialPlaceAnt()
       /* Choose the nexts cities to visit*/
-      (1 until numberCities).map((step) => aco.neighbourChooseAndMoveToNext(step, ant))
+      (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step, ant, colonie))
       /* Compute tour length*/
       ant.computeTour()
     })
   }
 
-  def constructSolutions(aco: Aco): Unit = {
-    this.evaluateAnts(aco)
+  def constructSolutions(colonie: Colonie): Unit = {
+    this.evaluateAnts(colonie)
     nTours += nAnts
   }
 
 
-  def updateStatisticsMaster(bestAntColonie: Ant): Unit = {
-    if (bestAntColonie.tourLength < _bestSoFarAnt.tourLength) {
-      bestAntColonie.clone(_bestSoFarAnt)
-      bestAntColonie.clone(_restartBestAnt)
-      updateCommonStats()
+  def updateStatisticsMaster(bestAntColonie: Ant, colonie: Colonie): Unit = {
+    if (bestAntColonie.tourLength < colonie.bestSoFarAnt.tourLength) {
+      bestAntColonie.clone(colonie.bestSoFarAnt)
+      bestAntColonie.clone(colonie.restartBestAnt)
+      updateCommonStats(colonie)
     }
-    if (bestAntColonie.tourLength < _restartBestAnt.tourLength) {
-      bestAntColonie.clone(_restartBestAnt)
+    if (bestAntColonie.tourLength < colonie.restartBestAnt.tourLength) {
+      bestAntColonie.clone(colonie.restartBestAnt)
       restartFoundBest = iteration
-      println("Restart best: " + _restartBestAnt.tourLength + ", restartFoundBest " + restartFoundBest + ", time " + elapsedTime())
+      println("Restart best: " + colonie.restartBestAnt.tourLength + ", restartFoundBest " + restartFoundBest + ", time " + elapsedTime())
     }
   }
 
-  def mmasUpdateMaster(): Unit = {
+  def mmasUpdateMaster(colonie: Colonie): Unit = {
     if ((iteration % ugb) != 0) {
-      globalUpdatePheremone(_bestSoFarAnt)
+      colonie.globalUpdatePheremone(colonie.bestSoFarAnt)
     } else {
-      if (ugb == 1 && (iteration - restartIteration > 50)) globalUpdatePheremone(_bestSoFarAnt) else globalUpdatePheremone(_restartBestAnt)
+      if (ugb == 1 && (iteration - restartIteration > 50)) colonie.globalUpdatePheremone(colonie.bestSoFarAnt) else colonie.globalUpdatePheremone(colonie.restartBestAnt)
     }
     ugb = 25
   }
 
-  def pheromoneTrailUpdateMaster(): Unit = {
+  def pheromoneTrailUpdateMaster(colonie: Colonie): Unit = {
     if (asFlag != 0 || mmasFlag != 0) {
       if (lsFlagValues.contains(lsFlag)) {
         /*TODO: LocalSearch*/
       } else {
-        evaporation()
+        colonie.evaporation()
       }
     }
 
     if (asFlag != 0) {
-      asUpdate()
+      colonie.asUpdate()
     } else if (mmasFlag != 0) {
-      mmasUpdateMaster()
+      mmasUpdateMaster(colonie)
     }
 
     if (mmasFlag != 0 && !lsFlagValues.contains(lsFlag)) {
-      checkPheromoneTrailLimits()
+      colonie.checkPheromoneTrailLimits()
     }
 
     if (asFlag != 0 || mmasFlag != 0) {
-      computeTotalInformation()
+      colonie.computeTotalInformation()
     }
 
   }
 
-  def searchControlAndStatisticsMaster(nTry: Int): Unit = {
-    branchingFactor = nodeBranching(lambda)
-    println("Best so far " + _bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
+  def searchControlAndStatisticsMaster(nTry: Int, colonie: Colonie): Unit = {
+    branchingFactor = nodeBranching(lambda, colonie)
+    println("Best so far " + colonie.bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
     println("INIT TRAILS !!!")
-    _restartBestAnt.tourLength = Int.MaxValue
-    initPheromoneTrails(trailMax)
-    computeTotalInformation()
+    colonie.restartBestAnt.tourLength = Int.MaxValue
+    colonie.initPheromoneTrails(trailMax)
+    colonie.computeTotalInformation()
     restartIteration = iteration
     restartTime = elapsedTime()
     println("try " + nTry + ", iteration " + iteration + ", b-fac " + branchingFactor)

@@ -1,9 +1,9 @@
 package Main
 
-import Entities.Aco.{Aco, AcoColonies}
-import Entities.Ant
+import Entities.Aco.AcoOperations._
 import Entities.ExecutionParameters.{coloniesIterations, maxTries}
 import Entities.Tsp.computeNearestNeighborsMatrix
+import Entities.{Ant, Colonie}
 import Util.Conf
 import Util.InOut._
 import Util.SparkConf.{getSparkContext, initializeSparkContext}
@@ -13,38 +13,38 @@ object MainColonies extends Serializable {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    val aco: Aco = new AcoColonies()
+    val colonie: Colonie = new Colonie()
     initializeSparkContext()
     conf.build
     startTimer()
-    initProgram(aco)
+    initProgram(colonie)
     computeNearestNeighborsMatrix()
     val time_used = elapsedTime()
     println("\nInitialization took " + time_used + " seconds\n")
     for (nTry <- 0 until maxTries) {
-      initTry(nTry)
-      while (!aco.terminationCondition()) {
-        val bestAntColonie = getSparkContext().parallelize(aco.ants).mapPartitions(iterator => {
-          executeAcoColonies(aco, iterator).toIterator
+      initTry(nTry, colonie)
+      while (!terminationCondition(colonie)) {
+        val bestAntColonie = getSparkContext().parallelize(colonie.ants).mapPartitions(iterator => {
+          executeAcoColonies(iterator, colonie).toIterator
         }).reduce((ant1, ant2) => if (ant1.tourLength < ant2.tourLength) ant1 else ant2)
-        aco.updateStatisticsMaster(bestAntColonie)
-        aco.pheromoneTrailUpdateMaster()
-        aco.searchControlAndStatisticsMaster(nTry)
+        updateStatisticsMaster(bestAntColonie, colonie)
+        pheromoneTrailUpdateMaster(colonie)
+        searchControlAndStatisticsMaster(nTry, colonie)
         iteration += 1
       }
-      exitTry(nTry)
+      exitTry(nTry, colonie)
     }
     exitProgram(true)
   }
 
-  def executeAcoColonies(aco: Aco, iterator: Iterator[Ant]): Vector[Ant] = {
-    aco.ants = iterator.toVector
+  def executeAcoColonies(iterator: Iterator[Ant], colonie: Colonie): Vector[Ant] = {
+    colonie.ants = iterator.toVector
     for (k <- 0 to coloniesIterations) {
-      aco.constructSolutions(aco)
-      aco.updateStatistics()
-      aco.pheromoneTrailUpdate()
+      constructSolutions(colonie)
+      updateStatistics(colonie)
+      pheromoneTrailUpdate(colonie)
     }
-    Vector(aco.bestSoFarAnt)
+    Vector(colonie.bestSoFarAnt)
   }
 
 }
