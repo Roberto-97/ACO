@@ -1,7 +1,7 @@
 package Main
 
 
-import Entities.Aco.{Aco, AcoSec}
+import Entities.Aco.AcoOperations._
 import Entities.Colonie
 import Entities.ExecutionParameters._
 import Entities.Tsp.computeNearestNeighborsMatrix
@@ -13,24 +13,20 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    val aco: Aco = new AcoSec()
-    val colonie: Colonie = new Colonie()
     conf.build
     startTimer()
-    initProgram(colonie)
+    initProgram()
     computeNearestNeighborsMatrix()
     val time_used = elapsedTime()
+    val colonie: Colonie = new Colonie()
     println("\nInitialization took " + time_used + " seconds\n")
     (0 until maxTries).map(nTry => {
-      initTry(nTry, colonie)
-      while (!aco.terminationCondition(colonie)) {
-        aco.constructSolutions(colonie)
-        if (lsFlagValues.contains(lsFlag)) {
-          /*TODO: localSearch()*/
-        }
-        aco.updateStatistics(colonie)
-        aco.pheromoneTrailUpdate(colonie)
-        aco.searchControlAndStatistics(nTry, colonie)
+      initTry(nTry, Vector(colonie))
+      while (!terminationCondition(colonie)) {
+        constructSolutions(colonie)
+        updateStatistics(colonie)
+        pheromoneTrailUpdate(colonie)
+        searchControlAndStatistics(nTry, colonie)
         iteration += 1
       }
       exitTry(nTry, colonie)

@@ -13,38 +13,42 @@ object MainColonies extends Serializable {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    val colonie: Colonie = new Colonie()
     initializeSparkContext()
     conf.build
     startTimer()
-    initProgram(colonie)
+    initProgram()
     computeNearestNeighborsMatrix()
     val time_used = elapsedTime()
+    val masterColonie = new Colonie()
+    var colonies: Vector[Colonie] = Vector.fill(getSparkContext().defaultParallelism)(new Colonie())
     println("\nInitialization took " + time_used + " seconds\n")
     for (nTry <- 0 until maxTries) {
-      initTry(nTry, colonie)
-      while (!terminationCondition(colonie)) {
-        val bestAntColonie = getSparkContext().parallelize(colonie.ants).mapPartitions(iterator => {
-          executeAcoColonies(iterator, colonie).toIterator
-        }).reduce((ant1, ant2) => if (ant1.tourLength < ant2.tourLength) ant1 else ant2)
-        updateStatisticsMaster(bestAntColonie, colonie)
-        pheromoneTrailUpdateMaster(colonie)
-        searchControlAndStatisticsMaster(nTry, colonie)
+      initTry(nTry, colonies)
+      masterColonie.bestSoFarAnt.tourLength = Int.MaxValue
+      while (!terminationCondition(masterColonie)) {
+        colonies = getSparkContext().parallelize(colonies).mapPartitions(iterator => {
+          iterator.map(colonie => {
+            executeAcoColonies(masterColonie.bestSoFarAnt, colonie, nTry)
+          })
+        }).collect().toVector
+        val bestColonie = colonies.reduce((c1, c2) => if (c1.bestSoFarAnt.tourLength < c2.bestSoFarAnt.tourLength) c1 else c2)
+        bestColonie.bestSoFarAnt.clone(masterColonie.bestSoFarAnt)
+        println("Best so far " + masterColonie.bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
         iteration += 1
       }
-      exitTry(nTry, colonie)
+      exitTry(nTry, masterColonie)
     }
     exitProgram(true)
   }
 
-  def executeAcoColonies(iterator: Iterator[Ant], colonie: Colonie): Vector[Ant] = {
-    colonie.ants = iterator.toVector
+  def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int): Colonie = {
+    bestAnt.clone(colonie.bestSoFarAnt)
     for (k <- 0 to coloniesIterations) {
       constructSolutions(colonie)
       updateStatistics(colonie)
       pheromoneTrailUpdate(colonie)
     }
-    Vector(colonie.bestSoFarAnt)
+    searchControlAndStatisticsColonie(nTry, colonie)
+    colonie
   }
-
 }

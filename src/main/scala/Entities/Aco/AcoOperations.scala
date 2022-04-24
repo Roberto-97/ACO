@@ -4,7 +4,11 @@ import Entities.ExecutionParameters._
 import Entities.Tsp._
 import Entities.{Ant, Colonie}
 import Util.InOut._
+import Util.SparkConf.getSparkContext
 import Util.Timer.elapsedTime
+import org.apache.spark.TaskContext
+
+import scala.util.Random
 
 object AcoOperations {
 
@@ -131,9 +135,47 @@ object AcoOperations {
     })
   }
 
+  def evaluateAntsMasterSlave(colonie: Colonie): Unit = {
+    colonie.ants = getSparkContext().parallelize(colonie.ants).mapPartitions(iterator => {
+      val tc = TaskContext.get()
+      randomNumber = new Random(seed * (tc.partitionId() + 1))
+      iterator.map(ant => {
+        /* Mark all cities as unvisited*/
+        ant.initializeVisited()
+        /* Place the ants on same initial city*/
+        ant.randomInitialPlaceAnt()
+        /* Choose the nexts cities to visit*/
+        (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step, ant, colonie))
+        /* Compute tour length*/
+        ant.computeTour()
+      })
+    }).collect().toVector
+  }
+
   def constructSolutions(colonie: Colonie): Unit = {
     this.evaluateAnts(colonie)
     nTours += nAnts
+  }
+
+  def constructSolutionsMasterSlave(colonie: Colonie): Unit = {
+    this.evaluateAntsMasterSlave(colonie)
+    nTours += nAnts
+  }
+
+  def searchControlAndStatistics(nTry: Int, colonie: Colonie): Unit = {
+    if (iteration % 100 == 0) {
+      branchingFactor = nodeBranching(lambda, colonie)
+      println("Best so far " + colonie.bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
+      if (mmasFlag != 0 && (branchingFactor < branchFac) && (iteration - restartFoundBest > 250)) {
+        println("INIT TRAILS !!!")
+        colonie.restartBestAnt.tourLength = Int.MaxValue
+        colonie.initPheromoneTrails(trailMax)
+        colonie.computeTotalInformation()
+        restartIteration = iteration
+        restartTime = elapsedTime()
+      }
+      println("try " + nTry + ", iteration " + iteration + ", b-fac " + branchingFactor)
+    }
   }
 
   def terminationCondition(colonie: Colonie): Boolean = {
@@ -219,63 +261,17 @@ object AcoOperations {
     }
 
   }
-
-  def updateStatisticsMaster(bestAntColonie: Ant, colonie: Colonie): Unit = {
-    if (bestAntColonie.tourLength < colonie.bestSoFarAnt.tourLength) {
-      bestAntColonie.clone(colonie.bestSoFarAnt)
-      bestAntColonie.clone(colonie.restartBestAnt)
-      updateCommonStats(colonie)
-    }
-    if (bestAntColonie.tourLength < colonie.restartBestAnt.tourLength) {
-      bestAntColonie.clone(colonie.restartBestAnt)
-      restartFoundBest = iteration
-      println("Restart best: " + colonie.restartBestAnt.tourLength + ", restartFoundBest " + restartFoundBest + ", time " + elapsedTime())
-    }
-  }
-
-  def mmasUpdateMaster(colonie: Colonie): Unit = {
-    if ((iteration % ugb) != 0) {
-      colonie.globalUpdatePheremone(colonie.bestSoFarAnt)
-    } else {
-      if (ugb == 1 && (iteration - restartIteration > 50)) colonie.globalUpdatePheremone(colonie.bestSoFarAnt) else colonie.globalUpdatePheremone(colonie.restartBestAnt)
-    }
-    ugb = 25
-  }
-
-  def pheromoneTrailUpdateMaster(colonie: Colonie): Unit = {
-    if (asFlag != 0 || mmasFlag != 0) {
-      if (lsFlagValues.contains(lsFlag)) {
-        /*TODO: LocalSearch*/
-      } else {
-        colonie.evaporation()
-      }
-    }
-
-    if (asFlag != 0) {
-      colonie.asUpdate()
-    } else if (mmasFlag != 0) {
-      mmasUpdateMaster(colonie)
-    }
-
-    if (mmasFlag != 0 && !lsFlagValues.contains(lsFlag)) {
-      colonie.checkPheromoneTrailLimits()
-    }
-
-    if (asFlag != 0 || mmasFlag != 0) {
-      colonie.computeTotalInformation()
-    }
-
-  }
-
-  def searchControlAndStatisticsMaster(nTry: Int, colonie: Colonie): Unit = {
+  
+  def searchControlAndStatisticsColonie(nTry: Int, colonie: Colonie): Unit = {
     branchingFactor = nodeBranching(lambda, colonie)
-    println("Best so far " + colonie.bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
     println("INIT TRAILS !!!")
-    colonie.restartBestAnt.tourLength = Int.MaxValue
-    colonie.initPheromoneTrails(trailMax)
-    colonie.computeTotalInformation()
-    restartIteration = iteration
-    restartTime = elapsedTime()
+    if (mmasFlag != 0 && (branchingFactor < branchFac)) {
+      colonie.restartBestAnt.tourLength = Int.MaxValue
+      colonie.initPheromoneTrails(trailMax)
+      colonie.computeTotalInformation()
+      restartIteration = iteration
+      restartTime = elapsedTime()
+    }
     println("try " + nTry + ", iteration " + iteration + ", b-fac " + branchingFactor)
   }
 

@@ -15,6 +15,12 @@ class Colonie extends Serializable {
   private var _total: Array[Array[Double]] = Array.empty
   private var _probOfSelection: Vector[Double] = Vector.empty
 
+  locally {
+    this.allocateAnts()
+    this.bestSoFarAnt.tourLength = Int.MaxValue
+  }
+
+
   /** *********************************************** Setters && Getters ****************************************************** */
 
   def ants = _ants

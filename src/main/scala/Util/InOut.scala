@@ -157,15 +157,13 @@ object InOut {
     avg / (numberCities * 2)
   }
 
-  def initProgram(colonie: Colonie): Unit = {
+  def initProgram(): Unit = {
     initializeParams()
     readEtsp(tsplibfile)
     if (nAnts < 0)
       nAnts = numberCities
 
     nnLs = (numberCities - 1).min(nnLs)
-
-    colonie.allocateAnts()
 
     println("Calculating distance matrix ..")
     computeDistances()
@@ -185,7 +183,7 @@ object InOut {
     println("End try")
   }
 
-  def initTry(nTry: Int, colonie: Colonie): Unit = {
+  def initTry(nTry: Int, colonies: Vector[Colonie]): Unit = {
     println("INITIALIZE TRIAL")
     startTimer()
     _timeUsed = elapsedTime()
@@ -196,20 +194,24 @@ object InOut {
     _iteration = 1
     _restartIteration = 1
     _lambda = 0.05
-    colonie.bestSoFarAnt.tourLength = Int.MaxValue
+    colonies.map(colonie => colonie.bestSoFarAnt.tourLength = Int.MaxValue)
     _foundBest = 0
 
     if (mmasFlag == 0) {
-      trail0 = 1.0 / (rho * AcoOperations.nnTour(colonie))
-      colonie.initPheromoneTrails(trail0)
+      colonies.map(colonie => {
+        trail0 = 1.0 / (rho * AcoOperations.nnTour(colonie))
+        colonie.initPheromoneTrails(trail0)
+      })
     } else {
-      trailMax = 1.0 / (rho * AcoOperations.nnTour(colonie))
-      trailMin = trailMax / (2 * numberCities)
-      colonie.initPheromoneTrails(trailMax)
+      colonies.map(colonie => {
+        trailMax = 1.0 / (rho * AcoOperations.nnTour(colonie))
+        trailMin = trailMax / (2 * numberCities)
+        colonie.initPheromoneTrails(trailMax)
+      })
     }
 
     /* Calculate combined information pheromone times heuristic information*/
-    colonie.computeTotalInformation()
+    colonies.map(colonie => colonie.computeTotalInformation())
 
     println("Begin try " + nTry + " \n")
   }

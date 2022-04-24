@@ -1,8 +1,8 @@
 package Main
 
-import Entities.Aco.{Aco, AcoMasterSlave}
+import Entities.Aco.AcoOperations._
 import Entities.Colonie
-import Entities.ExecutionParameters.{lsFlag, lsFlagValues, maxTries}
+import Entities.ExecutionParameters.maxTries
 import Entities.Tsp.computeNearestNeighborsMatrix
 import Util.Conf
 import Util.InOut._
@@ -13,25 +13,21 @@ object MainMasterSlave {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    val aco: Aco = new AcoMasterSlave()
-    val colonie: Colonie = new Colonie()
     initializeSparkContext()
     conf.build
     startTimer()
-    initProgram(colonie)
+    initProgram()
     computeNearestNeighborsMatrix()
     val time_used = elapsedTime()
+    val colonie: Colonie = new Colonie()
     println("\nInitialization took " + time_used + " seconds\n")
     (0 until maxTries).map(nTry => {
-      initTry(nTry, colonie)
-      while (!aco.terminationCondition(colonie)) {
-        aco.constructSolutions(colonie)
-        if (lsFlagValues.contains(lsFlag)) {
-          /*TODO: localSearch()*/
-        }
-        aco.updateStatistics(colonie)
-        aco.pheromoneTrailUpdate(colonie)
-        aco.searchControlAndStatistics(nTry, colonie)
+      initTry(nTry, Vector(colonie))
+      while (!terminationCondition(colonie)) {
+        constructSolutionsMasterSlave(colonie)
+        updateStatistics(colonie)
+        pheromoneTrailUpdate(colonie)
+        searchControlAndStatistics(nTry, colonie)
         iteration += 1
       }
       exitTry(nTry, colonie)
