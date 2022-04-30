@@ -261,7 +261,7 @@ object AcoOperations {
     }
 
   }
-  
+
   def searchControlAndStatisticsColonie(nTry: Int, colonie: Colonie): Unit = {
     branchingFactor = nodeBranching(lambda, colonie)
     println("INIT TRAILS !!!")

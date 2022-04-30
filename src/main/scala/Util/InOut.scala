@@ -282,8 +282,14 @@ object InOut {
     outputFile.write("\n\n")
     val bestTourLength = _bestInTry.minBy(_.get)
     val worstTourLength = _bestInTry.maxBy(_.get)
+    val medianBestValueTries = _bestInTry.sortWith(_.get < _.get).drop(_bestInTry.length / 2).head
+    val medianBestTimeTries = _timeBestFound.sortWith(_.get < _.get).drop(_timeBestFound.length / 2).head
+    val medianTimeTotalRun = _timeTotalRun.sortWith(_.get < _.get).drop(_timeTotalRun.length / 2).head
     outputFile.write("Best try " + bestTourLength + "\t")
     outputFile.write("Worst try " + worstTourLength + "\n")
+    outputFile.write("Median values tries : " + medianBestValueTries + "\n")
+    outputFile.write("Median best time tries : " + medianBestTimeTries + "\n")
+    outputFile.write("Median total time tries : " + medianTimeTotalRun + "\n")
     outputFile.write("End problem : " + name)
     outputFile.close()
     println("Best try: " + bestTourLength + " Worst try: " + worstTourLength)

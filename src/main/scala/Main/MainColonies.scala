@@ -32,7 +32,11 @@ object MainColonies extends Serializable {
           })
         }).collect().toVector
         val bestColonie = colonies.reduce((c1, c2) => if (c1.bestSoFarAnt.tourLength < c2.bestSoFarAnt.tourLength) c1 else c2)
-        bestColonie.bestSoFarAnt.clone(masterColonie.bestSoFarAnt)
+        if (bestColonie.bestSoFarAnt.tourLength < masterColonie.bestSoFarAnt.tourLength) {
+          bestColonie.bestSoFarAnt.clone(masterColonie.bestSoFarAnt)
+          foundBest = iteration
+          timeUsed = elapsedTime()
+        }
         println("Best so far " + masterColonie.bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
         iteration += 1
       }
