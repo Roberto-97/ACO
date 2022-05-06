@@ -1,5 +1,6 @@
 package Util
 
+import Entities.ExecutionParameters.workers
 import org.apache.spark.{SparkConf, SparkContext}
 
 object SparkConf {
@@ -8,7 +9,7 @@ object SparkConf {
 
 
   def initializeSparkContext(): Unit = {
-    this.sparkConf = new SparkConf().setAppName("aco-spark").setMaster("local[4]")
+    this.sparkConf = new SparkConf().setAppName("aco-spark").setMaster("local[" + workers + "]")
     this.sparkContext = new SparkContext(this.sparkConf)
   }
 

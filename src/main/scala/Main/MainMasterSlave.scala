@@ -13,8 +13,8 @@ object MainMasterSlave {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    initializeSparkContext()
     conf.build
+    initializeSparkContext()
     startTimer()
     initProgram()
     computeNearestNeighborsMatrix()

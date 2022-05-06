@@ -13,8 +13,8 @@ object MainColonies extends Serializable {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    initializeSparkContext()
     conf.build
+    initializeSparkContext()
     startTimer()
     initProgram()
     computeNearestNeighborsMatrix()
@@ -47,6 +47,7 @@ object MainColonies extends Serializable {
 
   def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int): Colonie = {
     bestAnt.clone(colonie.bestSoFarAnt)
+    bestAnt.clone(colonie.restartBestAnt)
     for (k <- 0 to coloniesIterations) {
       constructSolutions(colonie)
       updateStatistics(colonie)
