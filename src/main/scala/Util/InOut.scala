@@ -244,17 +244,20 @@ object InOut {
   def readEtsp(filename: String): Unit = {
     try {
       println("Read problem data ..")
-      val resource = Source.fromResource(filename)
+      val iStream = getClass.getResourceAsStream("/" + filename)
+      val resource = Source.fromInputStream(iStream)
       val lines = resource.getLines().toVector
       val name = lines(0).replaceAll(" ", "").split(NAME_KEY)(1)
       val dimension = lines(3).replaceAll(" ", "").split(DIMENSION_KEY)(1).trim
       val edgeWeightType = lines(4).replaceAll(" ", "").split(EDGE_WEIGHT_TYPE)(1).trim
       initializeTspParams(name, Integer.valueOf(dimension), selectDistance(edgeWeightType))
       setNodePtr(lines)
+      resource.close()
       println("done ..")
     } catch {
       case x: Exception =>
         println("\nError reading file " + filename + "...")
+        throw new IllegalArgumentException
     }
   }
 
