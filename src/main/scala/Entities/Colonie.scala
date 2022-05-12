@@ -15,11 +15,6 @@ class Colonie extends Serializable {
   private var _total: Array[Array[Double]] = Array.empty
   private var _probOfSelection: Vector[Double] = Vector.empty
 
-  locally {
-    this.allocateAnts()
-    this.bestSoFarAnt.tourLength = Int.MaxValue
-  }
-
 
   /** *********************************************** Setters && Getters ****************************************************** */
 
@@ -72,12 +67,18 @@ class Colonie extends Serializable {
   def initPheromoneTrails(initialTrail: Double): Unit = {
     println("Init trails with " + initialTrail)
     /* Initialize pheromone trails */
-    pheremone = Array.fill(numberCities)(Array.fill(numberCities)(initialTrail))
-    total = Array.fill(numberCities)(Array.fill(numberCities)(initialTrail))
+    pheremone = Array.fill(numberCities.get)(Array.fill(numberCities.get)(initialTrail))
+    total = Array.fill(numberCities.get)(Array.fill(numberCities.get)(initialTrail))
+  }
+
+  def initializeColonie(): Colonie = {
+    this.allocateAnts()
+    this.bestSoFarAnt.tourLength = Option(Int.MaxValue)
+    this
   }
 
   def computeTotalInformation(): Unit = {
-    for (i <- 0 until numberCities) {
+    for (i <- 0 until numberCities.get) {
       for (j <- 0 until i) {
         total(i)(j) = Math.pow(pheremone(i)(j), alpha) * Math.pow(heuristic(i, j), beta)
         total(j)(i) = total(i)(j)
@@ -86,7 +87,7 @@ class Colonie extends Serializable {
   }
 
   def evaporation(): Unit = {
-    for (i <- 0 until numberCities) {
+    for (i <- 0 until numberCities.get) {
       for (j <- 0 to i) {
         pheremone(i)(j) = (1 - rho) * pheremone(i)(j)
         pheremone(j)(i) = pheremone(i)(j)
@@ -95,8 +96,8 @@ class Colonie extends Serializable {
   }
 
   def globalUpdatePheremone(ant: Ant): Unit = {
-    val dTau = 1.0 / ant.tourLength
-    (0 until numberCities).map((i) => {
+    val dTau = 1.0 / ant.tourLength.get
+    (0 until numberCities.get).map((i) => {
       val j = ant.tour(i).get
       val h = ant.tour(i + 1).get
       pheremone(j)(h) += dTau
@@ -105,7 +106,7 @@ class Colonie extends Serializable {
   }
 
   def checkPheromoneTrailLimits(): Unit = {
-    for (i <- 0 until numberCities) {
+    for (i <- 0 until numberCities.get) {
       for (j <- 0 until i) {
         if (pheremone(i)(j) < trailMin) {
           pheremone(i)(j) = trailMin
@@ -121,10 +122,10 @@ class Colonie extends Serializable {
   def findBest(): Int = {
     var iter = 0
     var i = 0
-    var min = _ants(0).tourLength
+    var min = _ants(0).tourLength.get
     _ants.map(ant => {
-      if (ant.tourLength < min) {
-        min = ant.tourLength
+      if (ant.tourLength.get < min) {
+        min = ant.tourLength.get
         iter = i
       }
       i += 1

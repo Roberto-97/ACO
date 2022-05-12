@@ -12,7 +12,7 @@ import scala.util.Random
 
 object AcoOperations {
 
-  def calculateProb(sumProb: Double, probPtr: Vector[Double], step: Int, currentCity: Integer, ant: Ant, colonie: Colonie): Ant = {
+  def calculateProb(sumProb: Double, probPtr: Vector[Double], step: Int, currentCity: Int, ant: Ant, colonie: Colonie): Ant = {
     var random = randomNumber.nextDouble()
     random *= sumProb
     var i = 0
@@ -34,10 +34,10 @@ object AcoOperations {
   * maximal value of heuristic information times pheromone
   * */
   def chooseBestNext(step: Int, ant: Ant, colonie: Colonie): Ant = {
-    var nextCity = numberCities
+    var nextCity = numberCities.get
     val currentCity = ant.tour(step - 1).get
     var valueBest = -1.0
-    (0 until numberCities).map((city) => {
+    (0 until numberCities.get).map((city) => {
       if (!ant.visited(city)) {
         if (colonie.total(currentCity)(city) > valueBest) {
           nextCity = city
@@ -53,7 +53,7 @@ object AcoOperations {
   * maximal value of heuristic information times pheromone
   */
   def neighbourChooseBestNext(step: Int, ant: Ant, colonie: Colonie): Ant = {
-    var nextCity = numberCities
+    var nextCity = numberCities.get
     val currentCity = ant.tour(step - 1).get
     var valueBest = -1.0
     (0 until nnAnts).map((i) => {
@@ -67,7 +67,7 @@ object AcoOperations {
       }
     })
 
-    if (nextCity == numberCities) {
+    if (nextCity == numberCities.get) {
       chooseBestNext(step, ant, colonie)
     } else {
       ant.updateTour(step, nextCity)
@@ -107,10 +107,10 @@ object AcoOperations {
   }
 
   def chooseClosestNext(step: Int, ant: Ant): Ant = {
-    var nextCity = numberCities
+    var nextCity = numberCities.get
     val currentCity = ant.tour(step - 1)
     var minDistance = Int.MaxValue
-    (0 until numberCities).map((city) => {
+    (0 until numberCities.get).map((city) => {
       if (!ant.visited(city)) {
         if (distance(currentCity.get)(city) < minDistance) {
           nextCity = city
@@ -129,7 +129,7 @@ object AcoOperations {
       /* Place the ants on same initial city*/
       ant.randomInitialPlaceAnt()
       /* Choose the nexts cities to visit*/
-      (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step, ant, colonie))
+      (1 until numberCities.get).map((step) => neighbourChooseAndMoveToNext(step, ant, colonie))
       /* Compute tour length*/
       ant.computeTour()
     })
@@ -145,7 +145,7 @@ object AcoOperations {
         /* Place the ants on same initial city*/
         ant.randomInitialPlaceAnt()
         /* Choose the nexts cities to visit*/
-        (1 until numberCities).map((step) => neighbourChooseAndMoveToNext(step, ant, colonie))
+        (1 until numberCities.get).map((step) => neighbourChooseAndMoveToNext(step, ant, colonie))
         /* Compute tour length*/
         ant.computeTour()
       })
@@ -168,7 +168,7 @@ object AcoOperations {
       println("Best so far " + colonie.bestSoFarAnt.tourLength + ", iteration: " + iteration + ", time " + elapsedTime() + ", b_fac " + branchingFactor)
       if (mmasFlag != 0 && (branchingFactor < branchFac) && (iteration - restartFoundBest > 250)) {
         println("INIT TRAILS !!!")
-        colonie.restartBestAnt.tourLength = Int.MaxValue
+        colonie.restartBestAnt.tourLength = Option(Int.MaxValue)
         colonie.initPheromoneTrails(trailMax)
         colonie.computeTotalInformation()
         restartIteration = iteration
@@ -180,25 +180,25 @@ object AcoOperations {
 
   def terminationCondition(colonie: Colonie): Boolean = {
     nTours >= maxTours &&
-      (elapsedTime() >= maxTime || colonie.bestSoFarAnt.tourLength <= optimal || iteration > maxIterations)
+      (elapsedTime() >= maxTime || colonie.bestSoFarAnt.tourLength.get <= optimal || iteration > maxIterations)
   }
 
   def nnTour(colonie: Colonie): Int = {
     colonie.ants(0).initializeVisited()
     colonie.ants(0).randomInitialPlaceAnt()
 
-    (1 until numberCities).map((step) => {
+    (1 until numberCities.get).map((step) => {
       colonie.ants = colonie.ants.updated(0, chooseClosestNext(step, colonie.ants(0)))
     })
-    colonie.ants(0).tour = colonie.ants(0).tour.updated(numberCities, colonie.ants(0).tour(0))
+    colonie.ants(0).tour = colonie.ants(0).tour.updated(numberCities.get, colonie.ants(0).tour(0))
     if (lsFlagValues.contains(lsFlag)) {
       /*TODO: twoOptFirst()*/
     }
     nTours += 1
-    colonie.ants(0).tourLength = computeTourLength(colonie.ants(0).tour)
+    colonie.ants(0).tourLength = Option(computeTourLength(colonie.ants(0).tour))
     val result = colonie.ants(0).tourLength
     colonie.ants(0).initializeVisited()
-    result
+    result.get
   }
 
   def updateCommonStats(colonie: Colonie): Unit = {
@@ -209,29 +209,29 @@ object AcoOperations {
     branchingFactor = foundBranching
     if (mmasFlag != 0) {
       if (!lsFlagValues.contains(lsFlag)) {
-        val px = Math.exp(Math.log(0.05) / numberCities)
+        val px = Math.exp(Math.log(0.05) / numberCities.get)
         trailMin = 1.0 * (1 - px) / (px * ((nnAnts + 1) / 2))
-        trailMax = 1.0 / (rho * colonie.bestSoFarAnt.tourLength)
+        trailMax = 1.0 / (rho * colonie.bestSoFarAnt.tourLength.get)
         trail0 = trailMax
         trailMin = trailMax * trailMin
       } else {
-        trailMax = 1.0 / (rho * colonie.bestSoFarAnt.tourLength)
-        trailMin = trailMax / (2 * numberCities)
+        trailMax = 1.0 / (rho * colonie.bestSoFarAnt.tourLength.get)
+        trailMin = trailMax / (2 * numberCities.get)
         trail0 = trailMax
       }
     }
   }
 
   def updateStatistics(colonie: Colonie): Unit = {
-    var iterationBestAntIter: Integer = null
-    iterationBestAntIter = colonie.findBest()
-    if (colonie.ants(iterationBestAntIter).tourLength < colonie.bestSoFarAnt.tourLength) {
-      colonie.ants(iterationBestAntIter).clone(colonie.bestSoFarAnt)
-      colonie.ants(iterationBestAntIter).clone(colonie.restartBestAnt)
+    var iterationBestAntIter: Option[Int] = None
+    iterationBestAntIter = Option(colonie.findBest())
+    if (colonie.ants(iterationBestAntIter.get).tourLength.get < colonie.bestSoFarAnt.tourLength.get) {
+      colonie.ants(iterationBestAntIter.get).clone(colonie.bestSoFarAnt)
+      colonie.ants(iterationBestAntIter.get).clone(colonie.restartBestAnt)
       updateCommonStats(colonie)
     }
-    if (colonie.ants(iterationBestAntIter).tourLength < colonie.restartBestAnt.tourLength) {
-      colonie.ants(iterationBestAntIter).clone(colonie.restartBestAnt)
+    if (colonie.ants(iterationBestAntIter.get).tourLength.get < colonie.restartBestAnt.tourLength.get) {
+      colonie.ants(iterationBestAntIter.get).clone(colonie.restartBestAnt)
       restartFoundBest = iteration
       println("Restart best: " + colonie.restartBestAnt.tourLength + ", restartFoundBest " + restartFoundBest + ", time " + elapsedTime())
     }
@@ -264,9 +264,10 @@ object AcoOperations {
 
   def searchControlAndStatisticsColonie(nTry: Int, colonie: Colonie): Unit = {
     branchingFactor = nodeBranching(lambda, colonie)
-    println("INIT TRAILS !!!")
-    if (mmasFlag != 0 && (branchingFactor < branchFac)) {
-      colonie.restartBestAnt.tourLength = Int.MaxValue
+    if (mmasFlag != 0 && (branchingFactor < branchFac) && ((coloniesIterations * iteration) -
+      (restartFoundBest * coloniesIterations)) > 250) {
+      println("INIT TRAILS !!!")
+      colonie.restartBestAnt.tourLength = Option(Int.MaxValue)
       colonie.initPheromoneTrails(trailMax)
       colonie.computeTotalInformation()
       restartIteration = iteration

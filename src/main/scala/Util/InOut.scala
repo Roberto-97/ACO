@@ -135,8 +135,8 @@ object InOut {
   /** ************************************************************************************************************************* */
 
   def nodeBranching(lambda: Double, colonie: Colonie): Double = {
-    var numBranches = Vector.fill(numberCities)(0.0)
-    (0 until numberCities).map((m) => {
+    var numBranches = Vector.fill(numberCities.get)(0.0)
+    (0 until numberCities.get).map((m) => {
       var min = colonie.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
       var max = colonie.pheremone(m)(nearestNeighborsMatrix(m)(1).get)
       (1 until nnAnts).map(i => {
@@ -154,16 +154,16 @@ object InOut {
       })
     })
     val avg = numBranches.reduce((x, y) => x + y)
-    avg / (numberCities * 2)
+    avg / (numberCities.get * 2)
   }
 
   def initProgram(): Unit = {
     initializeParams()
     readEtsp(tsplibfile)
     if (nAnts < 0)
-      nAnts = numberCities
+      nAnts = numberCities.get
 
-    nnLs = (numberCities - 1).min(nnLs)
+    nnLs = (numberCities.get - 1).min(nnLs)
 
     println("Calculating distance matrix ..")
     computeDistances()
@@ -175,7 +175,7 @@ object InOut {
     checkTour(colonie.bestSoFarAnt.tour)
     println("Best Solution in try " + nTry + " is " + colonie.bestSoFarAnt.tourLength)
     println("Best Solution was found after " + _foundBest + " iterations")
-    _bestInTry = _bestInTry.updated(nTry, Option(colonie.bestSoFarAnt.tourLength.toInt))
+    _bestInTry = _bestInTry.updated(nTry, Option(colonie.bestSoFarAnt.tourLength.get))
     _bestFoundAt = _bestFoundAt.updated(nTry, Option(_foundBest))
     _timeBestFound = _timeBestFound.updated(nTry, Option(_timeUsed))
     _timeTotalRun = _timeTotalRun.updated(nTry, Option(elapsedTime()))
@@ -194,7 +194,7 @@ object InOut {
     _iteration = 1
     _restartIteration = 1
     _lambda = 0.05
-    colonies.map(colonie => colonie.bestSoFarAnt.tourLength = Int.MaxValue)
+    colonies.map(colonie => colonie.bestSoFarAnt.tourLength = Option(Int.MaxValue))
     _foundBest = 0
 
     if (mmasFlag == 0) {
@@ -205,7 +205,7 @@ object InOut {
     } else {
       colonies.map(colonie => {
         trailMax = 1.0 / (rho * AcoOperations.nnTour(colonie))
-        trailMin = trailMax / (2 * numberCities)
+        trailMin = trailMax / (2 * numberCities.get)
         colonie.initPheromoneTrails(trailMax)
       })
     }
@@ -250,7 +250,7 @@ object InOut {
       val name = lines(0).replaceAll(" ", "").split(NAME_KEY)(1)
       val dimension = lines(3).replaceAll(" ", "").split(DIMENSION_KEY)(1).trim
       val edgeWeightType = lines(4).replaceAll(" ", "").split(EDGE_WEIGHT_TYPE)(1).trim
-      initializeTspParams(name, Integer.valueOf(dimension), selectDistance(edgeWeightType))
+      initializeTspParams(name, dimension.toInt, selectDistance(edgeWeightType))
       setNodePtr(lines)
       resource.close()
       println("done ..")
@@ -299,17 +299,17 @@ object InOut {
     println("End problem " + name)
   }
 
-  def checkTour(tour: Vector[Option[Integer]]): Unit = {
-    val vectSum: Vector[Integer] = tour.map(e => e.getOrElse(Integer.valueOf(0)))
+  def checkTour(tour: Vector[Option[Int]]): Unit = {
+    val vectSum: Vector[Int] = tour.map(e => e.getOrElse(0))
     val sum: Int = vectSum.dropRight(1).reduce((x, y) => x + y)
-    if (sum != ((numberCities - 1) * numberCities) / 2) {
+    if (sum != ((numberCities.get - 1) * numberCities.get) / 2) {
       println("Next tour must be flawed !!")
       printTour(tour)
       println("Tour sum: " + sum)
     }
   }
 
-  def printTour(tour: Vector[Option[Integer]]): Unit = {
+  def printTour(tour: Vector[Option[Int]]): Unit = {
     tour.map(city => println("" + city))
     println("Tour Length = " + computeTourLength(tour))
   }

@@ -1,7 +1,7 @@
 package Util
 
 import Entities.ExecutionParameters
-import org.rogach.scallop.{ScallopConf, doubleConverter, intConverter, longConverter, stringConverter}
+import org.rogach.scallop.{ScallopConf, doubleConverter, intConverter, longConverter}
 
 class Conf(args: Seq[String]) extends ScallopConf(args) with Serializable {
   val lsFlag = opt[Int](required = false, validate = _ > 0)

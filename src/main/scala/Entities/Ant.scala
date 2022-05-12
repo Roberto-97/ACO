@@ -4,21 +4,21 @@ import Entities.Tsp._
 
 
 class Ant() extends Serializable {
-  private var _tour: Vector[Option[Integer]] = Vector.empty
+  private var _tour: Vector[Option[Int]] = Vector.empty
   private var _visited: Vector[Boolean] = Vector.empty
-  private var _tourLength: Integer = null
+  private var _tourLength: Option[Int] = Option.empty
 
   /** *********************************************** Setters && Getters ****************************************************** */
 
   def tour = _tour
 
-  def tour_=(tour: Vector[Option[Integer]]) = {
+  def tour_=(tour: Vector[Option[Int]]) = {
     _tour = tour
   }
 
   def tourLength = _tourLength
 
-  def tourLength_=(tourLength: Integer) = {
+  def tourLength_=(tourLength: Option[Int]) = {
     _tourLength = tourLength
   }
 
@@ -32,12 +32,12 @@ class Ant() extends Serializable {
 
 
   def initializeTour(): Ant = {
-    _tour = Vector.fill(numberCities + 1)(Option.empty)
+    _tour = Vector.fill(numberCities.get + 1)(Option.empty)
     this
   }
 
   def initializeVisited(): Ant = {
-    _visited = Vector.fill(numberCities + 1)(false)
+    _visited = Vector.fill(numberCities.get + 1)(false)
     this
   }
 
@@ -48,21 +48,21 @@ class Ant() extends Serializable {
   }
 
   def randomInitialPlaceAnt(): Ant = {
-    val random: Integer = randomNumber.nextInt(numberCities)
+    val random: Int = randomNumber.nextInt(numberCities.get)
     _tour = _tour.updated(0, Option(random))
     _visited = _visited.updated(random, true)
     this
   }
 
-  def updateTour(step: Int, city: Integer): Ant = {
+  def updateTour(step: Int, city: Int): Ant = {
     _tour = _tour.updated(step, Option(city))
     _visited = _visited.updated(city, true)
     this
   }
 
   def computeTour(): Ant = {
-    _tour = _tour.updated(numberCities, _tour(0))
-    _tourLength = computeTourLength(_tour)
+    _tour = _tour.updated(numberCities.get, _tour(0))
+    _tourLength = Option(computeTourLength(_tour))
     this
   }
 

@@ -15,24 +15,25 @@ object MainColonies extends Serializable {
     val conf = new Conf(args)
     conf.build
     initializeSparkContext()
+    println("Number colonies -> " + getSparkContext().defaultParallelism)
     startTimer()
     initProgram()
     computeNearestNeighborsMatrix()
     val time_used = elapsedTime()
-    val masterColonie = new Colonie()
-    var colonies: Vector[Colonie] = Vector.fill(getSparkContext().defaultParallelism)(new Colonie())
+    val masterColonie = new Colonie().initializeColonie()
+    var colonies: Vector[Colonie] = Vector.fill(getSparkContext().defaultParallelism)(new Colonie().initializeColonie())
     println("\nInitialization took " + time_used + " seconds\n")
     for (nTry <- 0 until maxTries) {
       initTry(nTry, colonies)
-      masterColonie.bestSoFarAnt.tourLength = Int.MaxValue
+      masterColonie.bestSoFarAnt.tourLength = Option(Int.MaxValue)
       while (!terminationCondition(masterColonie)) {
         colonies = getSparkContext().parallelize(colonies).mapPartitions(iterator => {
           iterator.map(colonie => {
             executeAcoColonies(masterColonie.bestSoFarAnt, colonie, nTry)
           })
         }).collect().toVector
-        val bestColonie = colonies.reduce((c1, c2) => if (c1.bestSoFarAnt.tourLength < c2.bestSoFarAnt.tourLength) c1 else c2)
-        if (bestColonie.bestSoFarAnt.tourLength < masterColonie.bestSoFarAnt.tourLength) {
+        val bestColonie = colonies.reduce((c1, c2) => if (c1.bestSoFarAnt.tourLength.get < c2.bestSoFarAnt.tourLength.get) c1 else c2)
+        if (bestColonie.bestSoFarAnt.tourLength.get < masterColonie.bestSoFarAnt.tourLength.get) {
           bestColonie.bestSoFarAnt.clone(masterColonie.bestSoFarAnt)
           foundBest = iteration
           timeUsed = elapsedTime()
