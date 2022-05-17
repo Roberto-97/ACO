@@ -28,6 +28,7 @@ class AcoColonies extends Aco with Serializable {
     (0 until ep.maxTries).map(nTry => {
       println("Begin try " + nTry + " \n")
       initTry(ep, tspParameters, colonies)
+      masterColonie.bestSoFarAnt.tourLength = Option(Int.MaxValue)
       while (!terminationCondition(masterColonie, ep, tspParameters)) {
         colonies = sparkContext.get.parallelize(colonies).mapPartitions(iterator => {
           iterator.map(colonie => {
