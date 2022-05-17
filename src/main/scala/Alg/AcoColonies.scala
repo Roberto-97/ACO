@@ -6,6 +6,8 @@ import Util.InOut._
 import Util.Timer.{elapsedTime, startTimer}
 import org.apache.spark.SparkContext
 
+import scala.util.Random
+
 class AcoColonies extends Aco with Serializable {
 
   override def run(ep: ExecutionParameters, sparkContext: Option[SparkContext]): Unit = {
@@ -42,7 +44,7 @@ class AcoColonies extends Aco with Serializable {
           masterColonie.timeUsed = elapsedTime()
         }
         println("Best so far " + masterColonie.bestSoFarAnt.tourLength + ", iteration: " + tspParameters.iteration +
-          ", time " + elapsedTime() + ", NTry " + nTry + ", BranchingFactor:" + masterColonie.branchingFactor)
+          ", time " + elapsedTime() + ", NTry " + nTry)
         tspParameters.iteration += 1
       }
       exitTry(nTry, masterColonie, tspParameters)
@@ -51,8 +53,8 @@ class AcoColonies extends Aco with Serializable {
   }
 
   def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int, ep: ExecutionParameters, tspParameters: TspParameters): Colonie = {
+    tspParameters.randomNumber = new Random(System.nanoTime())
     bestAnt.clone(colonie.bestSoFarAnt)
-    bestAnt.clone(colonie.restartBestAnt)
     for (k <- 0 to ep.coloniesIterations) {
       constructSolutions(colonie, ep, tspParameters, null)
       updateStatistics(colonie, ep, tspParameters)

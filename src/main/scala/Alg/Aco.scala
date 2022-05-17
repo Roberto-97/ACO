@@ -58,7 +58,6 @@ abstract class Aco {
     if (colonie.ants(iterationBestAntIter.get).tourLength.get < colonie.restartBestAnt.tourLength.get) {
       colonie.ants(iterationBestAntIter.get).clone(colonie.restartBestAnt)
       colonie.restartFoundBest = tspParameters.iteration
-      println("Restart best: " + colonie.restartBestAnt.tourLength + ", restartFoundBest " + colonie.restartFoundBest + ", time " + elapsedTime())
     }
   }
 
