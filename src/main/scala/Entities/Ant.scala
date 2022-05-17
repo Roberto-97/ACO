@@ -2,6 +2,8 @@ package Entities
 
 import Entities.Tsp._
 
+import scala.util.Random
+
 
 class Ant() extends Serializable {
   private var _tour: Vector[Option[Int]] = Vector.empty
@@ -31,24 +33,24 @@ class Ant() extends Serializable {
   /** ************************************************************************************************************************* */
 
 
-  def initializeTour(): Ant = {
-    _tour = Vector.fill(numberCities.get + 1)(Option.empty)
+  def initializeTour(numberCities: Int): Ant = {
+    _tour = Vector.fill(numberCities + 1)(Option.empty)
     this
   }
 
-  def initializeVisited(): Ant = {
-    _visited = Vector.fill(numberCities.get + 1)(false)
+  def initializeVisited(numberCities: Int): Ant = {
+    _visited = Vector.fill(numberCities + 1)(false)
     this
   }
 
-  def initializeAnt(): Ant = {
-    initializeVisited()
-    initializeTour()
+  def initializeAnt(numberCities: Int): Ant = {
+    initializeVisited(numberCities)
+    initializeTour(numberCities)
     this
   }
 
-  def randomInitialPlaceAnt(): Ant = {
-    val random: Int = randomNumber.nextInt(numberCities.get)
+  def randomInitialPlaceAnt(numberCities: Int, randomNumber: Random): Ant = {
+    val random: Int = randomNumber.nextInt(numberCities)
     _tour = _tour.updated(0, Option(random))
     _visited = _visited.updated(random, true)
     this
@@ -60,9 +62,9 @@ class Ant() extends Serializable {
     this
   }
 
-  def computeTour(): Ant = {
-    _tour = _tour.updated(numberCities.get, _tour(0))
-    _tourLength = Option(computeTourLength(_tour))
+  def computeTour(numberCities: Int, distance: Vector[Vector[Int]]): Ant = {
+    _tour = _tour.updated(numberCities, _tour(0))
+    _tourLength = Option(computeTourLength(_tour, numberCities, distance))
     this
   }
 

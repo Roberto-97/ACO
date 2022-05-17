@@ -1,13 +1,13 @@
 package Entities.DistanceStrategies
 
-import Entities.Tsp.nodeptr
+import Entities.Point
 
-class RoundDistance extends DistanceStrategies {
+class RoundDistance extends DistanceStrategies with Serializable {
 
-  override def computeDistance(i: Int, j: Int): Int = {
-    val xd = nodeptr(i).x - nodeptr(j).x
-    val yd = nodeptr(i).y - nodeptr(j).y
-    (Math.sqrt(xd*xd + yd*yd) + 0.5).toInt
+  override def computeDistance(i: Int, j: Int, nodePtr: Vector[Point]): Int = {
+    val xd = nodePtr(i).x - nodePtr(j).x
+    val yd = nodePtr(i).y - nodePtr(j).y
+    (Math.sqrt(xd * xd + yd * yd) + 0.5).toInt
   }
 
 }

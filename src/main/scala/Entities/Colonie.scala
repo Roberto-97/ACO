@@ -1,9 +1,5 @@
 package Entities
 
-import Entities.ExecutionParameters._
-import Entities.Tsp.{heuristic, numberCities}
-import Util.InOut.{iteration, restartIteration}
-
 class Colonie extends Serializable {
 
   private var _ants: Vector[Ant] = Vector.empty
@@ -14,6 +10,12 @@ class Colonie extends Serializable {
   private var _pheremone: Array[Array[Double]] = Array.empty
   private var _total: Array[Array[Double]] = Array.empty
   private var _probOfSelection: Vector[Double] = Vector.empty
+  private var _foundBranching: Double = Double.NaN
+  private var _branchingFactor: Double = Double.NaN
+  private var _restartFoundBest: Int = 0
+  private var _foundBest: Int = 0
+  private var _timeUsed: Double = Double.NaN
+  private var _restartIteration: Int = 1
 
 
   /** *********************************************** Setters && Getters ****************************************************** */
@@ -54,50 +56,86 @@ class Colonie extends Serializable {
     _probOfSelection = probOfSelection
   }
 
+  def restartFoundBest = _restartFoundBest
+
+  def restartFoundBest_=(restartFoundBest: Int) = {
+    _restartFoundBest = restartFoundBest
+  }
+
+  def foundBest = _foundBest
+
+  def foundBest_=(foundBest: Int) = {
+    _foundBest = foundBest
+  }
+
+  def timeUsed = _timeUsed
+
+  def timeUsed_=(timeUsed: Double) = {
+    _timeUsed = timeUsed
+  }
+
+  def branchingFactor = _branchingFactor
+
+  def branchingFactor_=(branchingFactor: Double) = {
+    _branchingFactor = branchingFactor
+  }
+
+  def foundBranching = _foundBranching
+
+  def foundBranching_=(foundBranching: Double) = {
+    _foundBranching = foundBranching
+  }
+
+  def restartIteration = _restartIteration
+
+  def restartIteration_=(restartIteration: Int) = {
+    _restartIteration = restartIteration
+  }
+
   /** ***************************************************************************************************************** */
 
-  def allocateAnts(): Unit = {
-    _ants = Vector.fill(nAnts)(new Ant().initializeTour())
-    _bestSoFarAnt = new Ant().initializeAnt()
-    _restartBestAnt = new Ant().initializeAnt()
-    _probOfSelection = Vector.fill(nnAnts + 1)(0.0)
-    _probOfSelection = _probOfSelection.updated(nnAnts, Double.MaxValue)
+  def allocateAnts(ep: ExecutionParameters, numberCities: Int): Unit = {
+    _ants = Vector.fill(ep.nAnts)(new Ant().initializeTour(numberCities))
+    _bestSoFarAnt = new Ant().initializeAnt(numberCities)
+    _restartBestAnt = new Ant().initializeAnt(numberCities)
+    _probOfSelection = Vector.fill(ep.nnAnts + 1)(0.0)
+    _probOfSelection = _probOfSelection.updated(ep.nnAnts, Double.MaxValue)
   }
 
-  def initPheromoneTrails(initialTrail: Double): Unit = {
+  def initPheromoneTrails(initialTrail: Double, numberCities: Int): Unit = {
     println("Init trails with " + initialTrail)
     /* Initialize pheromone trails */
-    pheremone = Array.fill(numberCities.get)(Array.fill(numberCities.get)(initialTrail))
-    total = Array.fill(numberCities.get)(Array.fill(numberCities.get)(initialTrail))
+    pheremone = Array.fill(numberCities)(Array.fill(numberCities)(initialTrail))
+    total = Array.fill(numberCities)(Array.fill(numberCities)(initialTrail))
   }
 
-  def initializeColonie(): Colonie = {
-    this.allocateAnts()
+  def initializeColonie(ep: ExecutionParameters, numberCities: Int): Colonie = {
+    this.allocateAnts(ep, numberCities)
     this.bestSoFarAnt.tourLength = Option(Int.MaxValue)
     this
   }
 
-  def computeTotalInformation(): Unit = {
-    for (i <- 0 until numberCities.get) {
+  def computeTotalInformation(ep: ExecutionParameters, numberCities: Int, distance: Vector[Vector[Int]]): Unit = {
+    for (i <- 0 until numberCities) {
       for (j <- 0 until i) {
-        total(i)(j) = Math.pow(pheremone(i)(j), alpha) * Math.pow(heuristic(i, j), beta)
+        total(i)(j) = Math.pow(pheremone(i)(j), ep.alpha) * Math.pow(Tsp.heuristic(i, j, distance), ep.beta)
         total(j)(i) = total(i)(j)
       }
     }
   }
 
-  def evaporation(): Unit = {
-    for (i <- 0 until numberCities.get) {
+  def evaporation(ep: ExecutionParameters, numberCities: Int): Unit = {
+    for (i <- 0 until numberCities) {
       for (j <- 0 to i) {
-        pheremone(i)(j) = (1 - rho) * pheremone(i)(j)
+        pheremone(i)(j) = (1 - ep.rho) * pheremone(i)(j)
         pheremone(j)(i) = pheremone(i)(j)
       }
     }
   }
 
-  def globalUpdatePheremone(ant: Ant): Unit = {
+  def globalUpdatePheremone(ant: Ant, numberCities: Int): Unit = {
     val dTau = 1.0 / ant.tourLength.get
-    (0 until numberCities.get).map((i) => {
+    (0 until numberCities).map((i) => {
       val j = ant.tour(i).get
       val h = ant.tour(i + 1).get
       pheremone(j)(h) += dTau
@@ -105,15 +143,15 @@ class Colonie extends Serializable {
     })
   }
 
-  def checkPheromoneTrailLimits(): Unit = {
-    for (i <- 0 until numberCities.get) {
+  def checkPheromoneTrailLimits(ep: ExecutionParameters, numberCities: Int): Unit = {
+    for (i <- 0 until numberCities) {
       for (j <- 0 until i) {
-        if (pheremone(i)(j) < trailMin) {
-          pheremone(i)(j) = trailMin
-          pheremone(j)(i) = trailMin
-        } else if (pheremone(i)(j) > trailMax) {
-          pheremone(i)(j) = trailMax
-          pheremone(j)(j) = trailMax
+        if (pheremone(i)(j) < ep.trailMin) {
+          pheremone(i)(j) = ep.trailMin
+          pheremone(j)(i) = ep.trailMin
+        } else if (pheremone(i)(j) > ep.trailMax) {
+          pheremone(i)(j) = ep.trailMax
+          pheremone(j)(j) = ep.trailMax
         }
       }
     }
@@ -137,18 +175,19 @@ class Colonie extends Serializable {
     _ants.maxBy(ant => ant.tourLength)
   }
 
-  def asUpdate(): Unit = {
-    _ants.map(ant => globalUpdatePheremone(ant))
+  def asUpdate(numberCities: Int): Unit = {
+    _ants.map(ant => globalUpdatePheremone(ant, numberCities))
   }
 
-  def mmasUpdate(): Unit = {
-    if ((iteration % ugb) != 0) {
+  def mmasUpdate(ep: ExecutionParameters, tspParameters: TspParameters): Unit = {
+    if ((tspParameters.iteration % ep.ugb) != 0) {
       val bestAnt = ants(findBest())
-      globalUpdatePheremone(bestAnt)
+      globalUpdatePheremone(bestAnt, tspParameters.numberCities)
     } else {
-      if (ugb == 1 && (iteration - restartIteration > 50)) globalUpdatePheremone(_bestSoFarAnt) else globalUpdatePheremone(_restartBestAnt)
+      if (ep.ugb == 1 && (tspParameters.iteration - _restartIteration > 50)) globalUpdatePheremone(_bestSoFarAnt, tspParameters.numberCities)
+      else globalUpdatePheremone(_restartBestAnt, tspParameters.numberCities)
     }
-    ugb = 25
+    ep.ugb = 25
   }
 
 }
