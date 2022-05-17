@@ -8,7 +8,7 @@ import org.apache.spark.SparkContext
 
 abstract class Aco {
 
-  def evaluateAnts(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters): Unit = {
+  def evaluateAnts(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters, sparkContext: Option[SparkContext] = null): Unit = {
     colonie.ants = colonie.ants.map(ant => {
       /* Mark all cities as unvisited*/
       ant.initializeVisited(tspParameters.numberCities)
@@ -21,8 +21,8 @@ abstract class Aco {
     })
   }
 
-  def constructSolutions(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters): Unit = {
-    this.evaluateAnts(colonie, ep, tspParameters)
+  def constructSolutions(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters, sparkContext: Option[SparkContext]): Unit = {
+    this.evaluateAnts(colonie, ep, tspParameters, sparkContext)
     tspParameters.nTours += ep.nAnts
   }
 
@@ -271,7 +271,7 @@ abstract class Aco {
       println("Begin try " + nTry + " \n")
       initTry(ep, tspParameters, Vector(colonie))
       while (!terminationCondition(colonie, ep, tspParameters)) {
-        constructSolutions(colonie, ep, tspParameters)
+        constructSolutions(colonie, ep, tspParameters, sparkContext)
         updateStatistics(colonie, ep, tspParameters)
         pheromoneTrailUpdate(colonie, ep, tspParameters)
         searchControlAndStatistics(nTry, colonie, ep, tspParameters)

@@ -53,7 +53,7 @@ class AcoColonies extends Aco with Serializable {
     bestAnt.clone(colonie.bestSoFarAnt)
     bestAnt.clone(colonie.restartBestAnt)
     for (k <- 0 to ep.coloniesIterations) {
-      constructSolutions(colonie, ep, tspParameters)
+      constructSolutions(colonie, ep, tspParameters, null)
       updateStatistics(colonie, ep, tspParameters)
       pheromoneTrailUpdate(colonie, ep, tspParameters)
     }

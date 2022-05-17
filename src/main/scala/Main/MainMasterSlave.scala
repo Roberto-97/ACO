@@ -1,29 +1,16 @@
 package Main
 
+import Alg.AcoMasterSlave
+import Util.Conf
+import org.apache.spark.{SparkConf, SparkContext}
+
 object MainMasterSlave {
 
-  //  def main(args: Array[String]): Unit = {
-  //    val conf = new Conf(args)
-  //    conf.build
-  //    initializeSparkContext()
-  //    startTimer()
-  //    initProgram()
-  //    computeNearestNeighborsMatrix()
-  //    val time_used = elapsedTime()
-  //    val colonie: Colonie = new Colonie().initializeColonie()
-  //    println("\nInitialization took " + time_used + " seconds\n")
-  //    (0 until maxTries).map(nTry => {
-  //      initTry(nTry, Vector(colonie))
-  //      while (!terminationCondition(colonie)) {
-  //        constructSolutionsMasterSlave(colonie)
-  //        updateStatistics(colonie)
-  //        pheromoneTrailUpdate(colonie)
-  //        searchControlAndStatistics(nTry, colonie)
-  //        iteration += 1
-  //      }
-  //      exitTry(nTry, colonie)
-  //    })
-  //    exitProgram(false)
-  //  }
+  def main(args: Array[String]): Unit = {
+    val ep = new Conf(args).build
+    val sparkConf = new SparkConf().setAppName("aco-spark").setMaster("local[4]")
+    val sc = new SparkContext(sparkConf)
+    new AcoMasterSlave().run(ep, Option(sc))
+  }
 
 }
