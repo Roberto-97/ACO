@@ -1,6 +1,6 @@
 package Alg
 
-import Entities.Tsp.{computeDistances, nodeBranching}
+import Entities.Tsp.computeDistances
 import Entities._
 import Util.InOut._
 import Util.Timer.{elapsedTime, startTimer}
@@ -40,7 +40,7 @@ class AcoColonies extends Aco with Serializable {
         val bestColonie = colonies.reduce((c1, c2) => if (c1.bestSoFarAnt.tourLength.get < c2.bestSoFarAnt.tourLength.get) c1 else c2)
         if (bestColonie.bestSoFarAnt.tourLength.get < masterColonie.bestSoFarAnt.tourLength.get) {
           bestColonie.bestSoFarAnt.clone(masterColonie.bestSoFarAnt)
-          masterColonie.foundBest = tspParameters.iteration
+          masterColonie.foundBest = bestColonie.foundBest
           masterColonie.timeUsed = elapsedTime()
         }
         println("Best so far " + masterColonie.bestSoFarAnt.tourLength + ", iteration: " + tspParameters.iteration +
@@ -55,25 +55,17 @@ class AcoColonies extends Aco with Serializable {
   def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int, ep: ExecutionParameters, tspParameters: TspParameters): Colonie = {
     tspParameters.randomNumber = new Random(System.nanoTime())
     bestAnt.clone(colonie.bestSoFarAnt)
-    for (k <- 0 to ep.coloniesIterations) {
+    bestAnt.clone(colonie.restartBestAnt)
+    val init = (tspParameters.iteration - 1) * ep.coloniesIterations
+    val fin = (tspParameters.iteration * ep.coloniesIterations)
+    for (k <- init to fin) {
+      tspParameters.iteration = k
       constructSolutions(colonie, ep, tspParameters, null)
       updateStatistics(colonie, ep, tspParameters)
       pheromoneTrailUpdate(colonie, ep, tspParameters)
+      searchControlAndStatistics(nTry, colonie, ep, tspParameters)
     }
-    searchControlAndStatistics(nTry, colonie, ep, tspParameters)
     colonie
-  }
-
-  override def searchControlAndStatistics(nTry: Int, colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters): Unit = {
-    colonie.branchingFactor = nodeBranching(colonie, ep, tspParameters)
-    if (ep.mmasFlag != 0 && (colonie.branchingFactor < ep.branchFac) && (tspParameters.iteration - colonie.restartFoundBest > 2)) {
-      println("INIT TRAILS !!!")
-      colonie.restartBestAnt.tourLength = Option(Int.MaxValue)
-      colonie.initPheromoneTrails(ep.trailMax, tspParameters.numberCities)
-      colonie.computeTotalInformation(ep, tspParameters.numberCities, tspParameters.distance)
-      colonie.restartIteration = tspParameters.iteration
-    }
-    println("try " + nTry + ", iteration " + tspParameters.iteration)
   }
 
 }
