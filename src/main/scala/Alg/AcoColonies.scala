@@ -56,7 +56,7 @@ class AcoColonies extends Aco with Serializable {
     tspParameters.randomNumber = new Random(System.nanoTime())
     bestAnt.clone(colonie.bestSoFarAnt)
     bestAnt.clone(colonie.restartBestAnt)
-    val init = (tspParameters.iteration - 1) * ep.coloniesIterations
+    val init = ((tspParameters.iteration - 1) * ep.coloniesIterations) + 1
     val fin = (tspParameters.iteration * ep.coloniesIterations)
     for (k <- init to fin) {
       tspParameters.iteration = k
