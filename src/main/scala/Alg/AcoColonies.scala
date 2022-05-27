@@ -26,18 +26,18 @@ class AcoColonies extends Aco with Serializable {
     val time_used = elapsedTime()
     println("\nInitialization took " + time_used + " seconds\n")
     val masterColonie: Colonie = new Colonie().initializeColonie(ep, tspParameters.numberCities)
-    var colonies: Vector[Colonie] = Vector.fill(sparkContext.get.defaultParallelism)(new Colonie().initializeColonie(ep, tspParameters.numberCities))
+    val colonies: Vector[Colonie] = Vector.fill(sparkContext.get.defaultParallelism)(new Colonie().initializeColonie(ep, tspParameters.numberCities))
     (0 until ep.maxTries).map(nTry => {
       println("Begin try " + nTry + " \n")
       initTry(ep, tspParameters, colonies)
       masterColonie.bestSoFarAnt.tourLength = Option(Int.MaxValue)
+      val rddColonies = sparkContext.get.parallelize(colonies).cache()
       while (!terminationCondition(masterColonie, ep, tspParameters)) {
-        colonies = sparkContext.get.parallelize(colonies).mapPartitions(iterator => {
+        val bestColonie = rddColonies.mapPartitions(iterator => {
           iterator.map(colonie => {
             executeAcoColonies(masterColonie.bestSoFarAnt, colonie, nTry, ep, tspParameters)
           })
-        }).collect().toVector
-        val bestColonie = colonies.reduce((c1, c2) => if (c1.bestSoFarAnt.tourLength.get < c2.bestSoFarAnt.tourLength.get) c1 else c2)
+        }).cache().reduce((c1, c2) => if (c1.bestSoFarAnt.tourLength.get < c2.bestSoFarAnt.tourLength.get) c1 else c2)
         if (bestColonie.bestSoFarAnt.tourLength.get < masterColonie.bestSoFarAnt.tourLength.get) {
           bestColonie.bestSoFarAnt.clone(masterColonie.bestSoFarAnt)
           masterColonie.foundBest = bestColonie.foundBest
