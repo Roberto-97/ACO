@@ -6,7 +6,9 @@ import Util.InOut._
 import Util.Timer.{elapsedTime, startTimer}
 import org.apache.spark.SparkContext
 
-abstract class Aco {
+import scala.util.Random
+
+object Aco {
 
   def evaluateAnts(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters, sparkContext: Option[SparkContext] = null): Unit = {
     colonie.ants = colonie.ants.map(ant => {
@@ -279,5 +281,21 @@ abstract class Aco {
       exitTry(nTry, colonie, tspParameters)
     })
     writeReport(sparkContext, tspParameters.name, ep)
+  }
+
+  def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int, ep: ExecutionParameters, tspParameters: TspParameters): Colonie = {
+    tspParameters.randomNumber = new Random(System.nanoTime())
+    bestAnt.clone(colonie.bestSoFarAnt)
+    bestAnt.clone(colonie.restartBestAnt)
+    val init = ((tspParameters.iteration - 1) * ep.coloniesIterations) + 1
+    val fin = (tspParameters.iteration * ep.coloniesIterations)
+    for (k <- init to fin) {
+      tspParameters.iteration = k
+      constructSolutions(colonie, ep, tspParameters, null)
+      updateStatistics(colonie, ep, tspParameters)
+      pheromoneTrailUpdate(colonie, ep, tspParameters)
+      searchControlAndStatistics(nTry, colonie, ep, tspParameters)
+    }
+    colonie
   }
 }

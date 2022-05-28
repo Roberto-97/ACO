@@ -1,6 +1,5 @@
 package Main
 
-import Alg.AcoMasterSlave
 import Util.Conf
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -10,7 +9,7 @@ object MainMasterSlave {
     val ep = new Conf(args).build
     val sparkConf = new SparkConf().setAppName("aco-spark")
     val sc = new SparkContext(sparkConf)
-    new AcoMasterSlave().run(ep, Option(sc))
+    //    new AcoMasterSlave().run(ep, Option(sc))
   }
 
 }

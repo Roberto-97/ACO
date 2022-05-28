@@ -1,16 +1,16 @@
 package Alg
 
+import Alg.Aco._
 import Entities.Tsp.computeDistances
 import Entities._
 import Util.InOut._
 import Util.Timer.{elapsedTime, startTimer}
 import org.apache.spark.SparkContext
 
-import scala.util.Random
 
-class AcoColonies extends Aco with Serializable {
+class AcoColonies {
 
-  override def run(ep: ExecutionParameters, sparkContext: Option[SparkContext]): Unit = {
+  def run(ep: ExecutionParameters, sparkContext: Option[SparkContext]): Unit = {
     println("Number colonies -> " + sparkContext.get.defaultParallelism)
     startTimer()
     val tspParameters = readEtsp(ep.tsplibfile, ep.seed)
@@ -52,20 +52,5 @@ class AcoColonies extends Aco with Serializable {
     writeReport(sparkContext, tspParameters.name, ep)
   }
 
-  def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int, ep: ExecutionParameters, tspParameters: TspParameters): Colonie = {
-    tspParameters.randomNumber = new Random(System.nanoTime())
-    bestAnt.clone(colonie.bestSoFarAnt)
-    bestAnt.clone(colonie.restartBestAnt)
-    val init = ((tspParameters.iteration - 1) * ep.coloniesIterations) + 1
-    val fin = (tspParameters.iteration * ep.coloniesIterations)
-    for (k <- init to fin) {
-      tspParameters.iteration = k
-      constructSolutions(colonie, ep, tspParameters, null)
-      updateStatistics(colonie, ep, tspParameters)
-      pheromoneTrailUpdate(colonie, ep, tspParameters)
-      searchControlAndStatistics(nTry, colonie, ep, tspParameters)
-    }
-    colonie
-  }
 
 }
