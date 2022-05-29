@@ -37,8 +37,7 @@ class Conf(args: Seq[String]) extends ScallopConf(args) with Serializable {
       numberAnts.getOrElse(25), numberNeighboursAnts.getOrElse(20), rho.getOrElse(0.02),
       alpha.getOrElse(1.0), beta.getOrElse(2.0), q0.getOrElse(0.0), maxTries.getOrElse(10),
       maxTours.getOrElse(0), maxTime.getOrElse(10.0), optimal.getOrElse(1), asFlag.getOrElse(0),
-      mmasFlag.getOrElse(1), trailMax.getOrElse(0), trailMix.getOrElse(0), ugb.getOrElse(Int.MaxValue),
-      trail0.getOrElse(0.0), rasRanks.getOrElse(0), elitistAnts.getOrElse(0), tsplibfile.apply(),
+      mmasFlag.getOrElse(1), ugb.getOrElse(Int.MaxValue), rasRanks.getOrElse(0), elitistAnts.getOrElse(0), tsplibfile.apply(),
       branchFac.getOrElse(1.00001), seed.getOrElse(System.nanoTime()), maxIterations.getOrElse(1000), coloniesIterations.getOrElse(10), isColonies.getOrElse(0))
 
   }

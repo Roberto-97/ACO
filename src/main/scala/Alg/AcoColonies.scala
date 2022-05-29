@@ -1,16 +1,29 @@
 package Alg
 
-import Alg.Aco._
 import Entities.Tsp.computeDistances
 import Entities._
 import Util.InOut._
 import Util.Timer.{elapsedTime, startTimer}
 import org.apache.spark.SparkContext
 
+import scala.util.Random
 
-class AcoColonies {
 
-  def run(ep: ExecutionParameters, sparkContext: Option[SparkContext]): Unit = {
+class AcoColonies extends Aco with Serializable {
+
+  override def initTry(ep: ExecutionParameters, tspParameters: TspParameters, colonies: Vector[Colonie]): Unit = {
+    println("INITIALIZE TRIAL")
+    startTimer()
+
+    /* Initialize variables concerning statistics */
+    tspParameters.nTours = 1
+    tspParameters.iteration = 1
+    tspParameters.lambda = 0.05
+
+    //    initPheromone(colonies, ep, tspParameters)
+  }
+
+  override def run(ep: ExecutionParameters, sparkContext: Option[SparkContext]): Unit = {
     println("Number colonies -> " + sparkContext.get.defaultParallelism)
     startTimer()
     val tspParameters = readEtsp(ep.tsplibfile, ep.seed)
@@ -50,6 +63,25 @@ class AcoColonies {
       exitTry(nTry, masterColonie, tspParameters)
     })
     writeReport(sparkContext, tspParameters.name, ep)
+  }
+
+  def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int, ep: ExecutionParameters, tspParameters: TspParameters): Colonie = {
+    tspParameters.randomNumber = new Random(System.nanoTime())
+    if (bestAnt.tourLength.get == Int.MaxValue) {
+      initPheromone(Vector(colonie), ep, tspParameters)
+    }
+    bestAnt.clone(colonie.bestSoFarAnt)
+    bestAnt.clone(colonie.restartBestAnt)
+    val init = ((tspParameters.iteration - 1) * ep.coloniesIterations) + 1
+    val fin = (tspParameters.iteration * ep.coloniesIterations)
+    for (k <- init to fin) {
+      tspParameters.iteration = k
+      constructSolutions(colonie, ep, tspParameters, null)
+      updateStatistics(colonie, ep, tspParameters)
+      pheromoneTrailUpdate(colonie, ep, tspParameters)
+      searchControlAndStatistics(nTry, colonie, ep, tspParameters)
+    }
+    colonie
   }
 
 

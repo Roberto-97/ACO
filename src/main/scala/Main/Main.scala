@@ -7,7 +7,7 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-    Aco.run(conf.build, Option.empty)
+    new Aco().run(conf.build, Option.empty)
   }
 
 }

@@ -12,6 +12,9 @@ class Colonie extends Serializable {
   private var _probOfSelection: Vector[Double] = Vector.empty
   private var _foundBranching: Double = Double.NaN
   private var _branchingFactor: Double = Double.NaN
+  private var _trail0: Double = 0.0
+  private var _trailMin: Double = 0.0
+  private var _trailMax: Double = 0.0
   private var _restartFoundBest: Int = 0
   private var _foundBest: Int = 0
   private var _timeUsed: Double = Double.NaN
@@ -72,6 +75,24 @@ class Colonie extends Serializable {
 
   def timeUsed_=(timeUsed: Double) = {
     _timeUsed = timeUsed
+  }
+
+  def trailMin = _trailMin
+
+  def trailMin_=(trailMin: Double) = {
+    _trailMin = trailMin
+  }
+
+  def trailMax = _trailMax
+
+  def trailMax_=(trailMax: Double) = {
+    _trailMax = trailMax
+  }
+
+  def trail0 = _trail0
+
+  def trail0_=(trail0: Double) = {
+    _trail0 = trail0
   }
 
   def branchingFactor = _branchingFactor
@@ -143,15 +164,15 @@ class Colonie extends Serializable {
     })
   }
 
-  def checkPheromoneTrailLimits(ep: ExecutionParameters, numberCities: Int): Unit = {
+  def checkPheromoneTrailLimits(numberCities: Int): Unit = {
     for (i <- 0 until numberCities) {
       for (j <- 0 until i) {
-        if (pheremone(i)(j) < ep.trailMin) {
-          pheremone(i)(j) = ep.trailMin
-          pheremone(j)(i) = ep.trailMin
-        } else if (pheremone(i)(j) > ep.trailMax) {
-          pheremone(i)(j) = ep.trailMax
-          pheremone(j)(j) = ep.trailMax
+        if (pheremone(i)(j) < trailMin) {
+          pheremone(i)(j) = trailMin
+          pheremone(j)(i) = trailMin
+        } else if (pheremone(i)(j) > trailMax) {
+          pheremone(i)(j) = trailMax
+          pheremone(j)(j) = trailMax
         }
       }
     }

@@ -6,9 +6,7 @@ import Util.InOut._
 import Util.Timer.{elapsedTime, startTimer}
 import org.apache.spark.SparkContext
 
-import scala.util.Random
-
-object Aco {
+class Aco {
 
   def evaluateAnts(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters, sparkContext: Option[SparkContext] = null): Unit = {
     colonie.ants = colonie.ants.map(ant => {
@@ -37,14 +35,14 @@ object Aco {
     if (ep.mmasFlag != 0) {
       if (!Vector(1, 2, 3).contains(ep.lsFlag)) {
         val px = Math.exp(Math.log(0.05) / tspParameters.numberCities)
-        ep.trailMin = 1.0 * (1 - px) / (px * ((ep.nnAnts + 1) / 2))
-        ep.trailMax = 1.0 / (ep.rho * colonie.bestSoFarAnt.tourLength.get)
-        ep.trail0 = ep.trailMax
-        ep.trailMin = ep.trailMax * ep.trailMin
+        colonie.trailMin = 1.0 * (1 - px) / (px * ((ep.nnAnts + 1) / 2))
+        colonie.trailMax = 1.0 / (ep.rho * colonie.bestSoFarAnt.tourLength.get)
+        colonie.trail0 = colonie.trailMax
+        colonie.trailMin = colonie.trailMax * colonie.trailMin
       } else {
-        ep.trailMax = 1.0 / (ep.rho * colonie.bestSoFarAnt.tourLength.get)
-        ep.trailMin = ep.trailMax / (2 * tspParameters.numberCities)
-        ep.trail0 = ep.trailMax
+        colonie.trailMax = 1.0 / (ep.rho * colonie.bestSoFarAnt.tourLength.get)
+        colonie.trailMin = colonie.trailMax / (2 * tspParameters.numberCities)
+        colonie.trail0 = colonie.trailMax
       }
     }
   }
@@ -79,7 +77,7 @@ object Aco {
     }
 
     if (ep.mmasFlag != 0 && !Vector(1, 2, 3).contains(ep.lsFlag)) {
-      colonie.checkPheromoneTrailLimits(ep, tspParameters.numberCities)
+      colonie.checkPheromoneTrailLimits(tspParameters.numberCities)
     }
 
     if (ep.asFlag != 0 || ep.mmasFlag != 0) {
@@ -96,11 +94,10 @@ object Aco {
       if (ep.mmasFlag != 0 && (colonie.branchingFactor < ep.branchFac) && (tspParameters.iteration - colonie.restartFoundBest > 250)) {
         println("INIT TRAILS !!!")
         colonie.restartBestAnt.tourLength = Option(Int.MaxValue)
-        colonie.initPheromoneTrails(ep.trailMax, tspParameters.numberCities)
+        colonie.initPheromoneTrails(colonie.trailMax, tspParameters.numberCities)
         colonie.computeTotalInformation(ep, tspParameters.numberCities, tspParameters.distance)
         colonie.restartIteration = tspParameters.iteration
       }
-      println("try " + nTry + ", iteration " + tspParameters.iteration)
     }
   }
 
@@ -222,14 +219,7 @@ object Aco {
     result.get
   }
 
-  def initTry(ep: ExecutionParameters, tspParameters: TspParameters, colonies: Vector[Colonie]): Unit = {
-    println("INITIALIZE TRIAL")
-    startTimer()
-
-    /* Initialize variables concerning statistics */
-    tspParameters.nTours = 1
-    tspParameters.iteration = 1
-    tspParameters.lambda = 0.05
+  def initPheromone(colonies: Vector[Colonie], ep: ExecutionParameters, tspParameters: TspParameters): Unit = {
     colonies.map(colonie => {
       colonie.bestSoFarAnt.tourLength = Option(Int.MaxValue)
       colonie.timeUsed = elapsedTime()
@@ -238,19 +228,32 @@ object Aco {
 
     if (ep.mmasFlag == 0) {
       colonies.map(colonie => {
-        ep.trail0 = 1.0 / (ep.rho * nnTour(colonie, tspParameters))
-        colonie.initPheromoneTrails(ep.trail0, tspParameters.numberCities)
+        colonie.trail0 = 1.0 / (ep.rho * nnTour(colonie, tspParameters))
+        colonie.initPheromoneTrails(colonie.trail0, tspParameters.numberCities)
       })
     } else {
       colonies.map(colonie => {
-        ep.trailMax = 1.0 / (ep.rho * nnTour(colonie, tspParameters))
-        ep.trailMin = ep.trailMax / (2 * tspParameters.numberCities)
-        colonie.initPheromoneTrails(ep.trailMax, tspParameters.numberCities)
+        colonie.trailMax = 1.0 / (ep.rho * nnTour(colonie, tspParameters))
+        colonie.trailMin = colonie.trailMax / (2 * tspParameters.numberCities)
+        colonie.initPheromoneTrails(colonie.trailMax, tspParameters.numberCities)
       })
     }
 
     /* Calculate combined information pheromone times heuristic information*/
     colonies.map(colonie => colonie.computeTotalInformation(ep, tspParameters.numberCities, tspParameters.distance))
+  }
+
+  def initTry(ep: ExecutionParameters, tspParameters: TspParameters, colonies: Vector[Colonie]): Unit = {
+    println("INITIALIZE TRIAL")
+    startTimer()
+
+    /* Initialize variables concerning statistics */
+    tspParameters.nTours = 1
+    tspParameters.iteration = 1
+    tspParameters.lambda = 0.05
+
+    initPheromone(colonies, ep, tspParameters)
+
   }
 
   def run(ep: ExecutionParameters, sparkContext: Option[SparkContext]): Unit = {
@@ -281,21 +284,5 @@ object Aco {
       exitTry(nTry, colonie, tspParameters)
     })
     writeReport(sparkContext, tspParameters.name, ep)
-  }
-
-  def executeAcoColonies(bestAnt: Ant, colonie: Colonie, nTry: Int, ep: ExecutionParameters, tspParameters: TspParameters): Colonie = {
-    tspParameters.randomNumber = new Random(System.nanoTime())
-    bestAnt.clone(colonie.bestSoFarAnt)
-    bestAnt.clone(colonie.restartBestAnt)
-    val init = ((tspParameters.iteration - 1) * ep.coloniesIterations) + 1
-    val fin = (tspParameters.iteration * ep.coloniesIterations)
-    for (k <- init to fin) {
-      tspParameters.iteration = k
-      constructSolutions(colonie, ep, tspParameters, null)
-      updateStatistics(colonie, ep, tspParameters)
-      pheromoneTrailUpdate(colonie, ep, tspParameters)
-      searchControlAndStatistics(nTry, colonie, ep, tspParameters)
-    }
-    colonie
   }
 }
