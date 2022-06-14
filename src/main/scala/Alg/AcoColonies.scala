@@ -20,7 +20,6 @@ class AcoColonies extends Aco with Serializable {
     tspParameters.iteration = 1
     tspParameters.lambda = 0.05
 
-    //    initPheromone(colonies, ep, tspParameters)
   }
 
   override def run(ep: ExecutionParameters, sparkContext: Option[SparkContext]): Unit = {
@@ -72,6 +71,7 @@ class AcoColonies extends Aco with Serializable {
     }
     bestAnt.clone(colonie.bestSoFarAnt)
     bestAnt.clone(colonie.restartBestAnt)
+    updateCommonStats(colonie, ep, tspParameters)
     val init = ((tspParameters.iteration - 1) * ep.coloniesIterations) + 1
     val fin = (tspParameters.iteration * ep.coloniesIterations)
     for (k <- init to fin) {
