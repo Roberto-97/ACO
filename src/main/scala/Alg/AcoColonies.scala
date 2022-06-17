@@ -69,9 +69,13 @@ class AcoColonies extends Aco with Serializable {
     if (bestAnt.tourLength.get == Int.MaxValue) {
       initPheromone(Vector(colonie), ep, tspParameters)
     }
-    bestAnt.clone(colonie.bestSoFarAnt)
-    bestAnt.clone(colonie.restartBestAnt)
-    updateCommonStats(colonie, ep, tspParameters)
+    if (bestAnt.tourLength.get < colonie.bestSoFarAnt.tourLength.get) {
+      bestAnt.clone(colonie.bestSoFarAnt)
+      bestAnt.clone(colonie.restartBestAnt)
+      colonie.trailMax = 1.0 / (ep.rho * colonie.bestSoFarAnt.tourLength.get)
+      colonie.trailMin = colonie.trailMax / (2 * tspParameters.numberCities)
+      colonie.trail0 = colonie.trailMax
+    }
     val init = ((tspParameters.iteration - 1) * ep.coloniesIterations) + 1
     val fin = (tspParameters.iteration * ep.coloniesIterations)
     for (k <- init to fin) {

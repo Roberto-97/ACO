@@ -5,7 +5,7 @@ import org.apache.spark.{SparkContext, TaskContext}
 
 import scala.util.Random
 
-class AcoMasterSlave extends Aco {
+class AcoMasterSlave extends Aco with Serializable {
 
   override def evaluateAnts(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters, sparkContext: Option[SparkContext]): Unit = {
     colonie.ants = sparkContext.get.parallelize(colonie.ants).mapPartitions(iterator => {
