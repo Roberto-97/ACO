@@ -1,110 +1,70 @@
 package Entities
 
 import Entities.DistanceStrategies.DistanceStrategies
-import Entities.ExecutionParameters._
-
-import scala.util.Random
 
 object Tsp {
 
-  private var _name: String = null
-  private var _distance: Vector[Vector[Int]] = Vector.empty
-  private var _numberCities: Integer = null
-  private var _nearestNeighborsMatrix: Array[Array[Option[Int]]] = Array.empty
-  private var _nodeptr: Vector[Point] = Vector.empty
-  private var _distanceStrategy: DistanceStrategies = null
-  private var _randomNumber: Random = null
-
-  /************************************************* Setters && Getters *******************************************************/
-
-  def name = _name
-  def name_=(name:String) = {
-    _name = name
+  def nodeBranching(colonie: Colonie, ep: ExecutionParameters, tspParameters: TspParameters): Double = {
+    var numBranches = Vector.fill(tspParameters.numberCities)(0.0)
+    (0 until tspParameters.numberCities).map((m) => {
+      var min = colonie.pheremone(m)(tspParameters.nearestNeighborsMatrix(m)(1).get)
+      var max = colonie.pheremone(m)(tspParameters.nearestNeighborsMatrix(m)(1).get)
+      (1 until ep.nnAnts).map(i => {
+        if (colonie.pheremone(m)(tspParameters.nearestNeighborsMatrix(m)(i).get) > max) {
+          max = colonie.pheremone(m)(tspParameters.nearestNeighborsMatrix(m)(i).get)
+        }
+        if (colonie.pheremone(m)(tspParameters.nearestNeighborsMatrix(m)(i).get) < min) {
+          min = colonie.pheremone(m)(tspParameters.nearestNeighborsMatrix(m)(i).get)
+        }
+      })
+      val cutoff = min + tspParameters.lambda * (max - min)
+      (0 until ep.nnAnts).map(i => {
+        if (colonie.pheremone(m)(tspParameters.nearestNeighborsMatrix(m)(i).get) > cutoff)
+          numBranches = numBranches.updated(m, numBranches(m) + 1.0)
+      })
+    })
+    val avg = numBranches.reduce((x, y) => x + y)
+    avg / (tspParameters.numberCities * 2)
   }
 
-  def distance = _distance
-  def distance_=(distance:Vector[Vector[Int]]) = {
-    _distance = distance
+  def heuristic(i: Int, j: Int, distance: Vector[Vector[Int]]): Double = {
+    1.0 / (distance(i)(j) + 0.1)
   }
 
-  def numberCities = _numberCities
-  def numberCities_=(numberCities:Integer) = {
-    _numberCities = numberCities
-  }
-
-  def nearestNeighborsMatrix = _nearestNeighborsMatrix
-  def nearestNeighborsMatrix_=(nearestNeighborsMatrix:Array[Array[Option[Int]]]) = {
-    _nearestNeighborsMatrix = nearestNeighborsMatrix
-  }
-
-  def nodeptr = _nodeptr
-  def nodeptr_=(nodeptr:Vector[Point]) = {
-    _nodeptr = nodeptr
-  }
-
-  def distanceStrategy = _distanceStrategy
-  def distanceStrategy_=(distanceStrategy:DistanceStrategies) = {
-    _distanceStrategy = distanceStrategy
-  }
-
-  def randomNumber = _randomNumber
-  def randomNumber_=(randomNumber: Random) = {
-    _randomNumber = randomNumber
-  }
-
-  /****************************************************************************************************************************/
-
-  def initializeTspParams(name: String, numberCities: Integer, distanceStrategy: DistanceStrategies): Unit = {
-    this._name = name
-    this._numberCities = numberCities
-    this._distanceStrategy = distanceStrategy
-    this._nodeptr = Vector.fill(numberCities)(null)
-    this._randomNumber = new Random(seed)
-  }
-
-  def setNodeCordSection(i: Double, j: Double, pos: Int): Unit = {
-    _nodeptr = _nodeptr.updated(pos, Point(i, j))
-  }
-
-  def heuristic(i: Int, j: Int): Double = {
-    1.0 / (_distance(i)(j) + 0.1)
-  }
-
-  def computeNearestNeighborsMatrix(): Unit = {
+  def computeNearestNeighborsMatrix(ep: ExecutionParameters, tspParameters: TspParameters): Unit = {
     var nn: Int = 0
     println("Computing nearest neighbor lists ..")
-    nn = nnLs.max(nnAnts)
-    if (nn >= _numberCities)
-      nn = _numberCities -1
-    require(_numberCities > nn, "Number of cities must be mayor than depth of nearest ")
+    nn = ep.nnLs.max(ep.nnAnts)
+    if (nn >= tspParameters.numberCities)
+      nn = tspParameters.numberCities - 1
+    require(tspParameters.numberCities > nn, "Number of cities must be mayor than depth of nearest ")
 
-    _nearestNeighborsMatrix = Array.fill(_numberCities)(Array.fill(nn)(Option.empty))
+    tspParameters.nearestNeighborsMatrix = Array.fill(tspParameters.numberCities)(Array.fill(nn)(Option(0)))
     var node = 0
-    while (node < _numberCities) {
-      var auxVector = (0 until _numberCities).map(i => (i, _distance(node)(i))).toVector
+    while (node < tspParameters.numberCities) {
+      var auxVector = (0 until tspParameters.numberCities).map(i => (i, tspParameters.distance(node)(i))).toVector
       auxVector = auxVector.updated(node, (node, Int.MaxValue))
       val nearestCities = auxVector
         .sortBy(_._2)
         .map(t => Option(t._1))
       for (i <- 0 until nn) {
-        _nearestNeighborsMatrix(node)(i) = nearestCities(i)
+        tspParameters.nearestNeighborsMatrix(node)(i) = nearestCities(i)
       }
-      node+=1
+      node += 1
     }
     println("done ..")
   }
 
-  def computeTourLength(tour: Vector[Option[Integer]]): Int = {
-    (0 until _numberCities)
-      .map((city) => _distance(tour(city).get)(tour(city + 1).get))
+  def computeTourLength(tour: Vector[Option[Int]], numberCities: Int, distance: Vector[Vector[Int]]): Int = {
+    (0 until numberCities)
+      .map((city) => distance(tour(city).get)(tour(city + 1).get))
       .reduce((distancex, distancey) => distancex + distancey)
   }
 
-  def computeDistances(): Unit = {
-    _distance = Vector.fill(_numberCities)(Vector.fill(_numberCities)(0))
-    _distance = (0 until _numberCities)
-      .map((i) => (0 until _numberCities)
-      .map((j) => _distanceStrategy.computeDistance(i, j)).toVector).toVector
+  def computeDistances(numberCities: Int, distanceStrategy: DistanceStrategies, nodePtr: Vector[Point]): Vector[Vector[Int]] = {
+    (0 until numberCities)
+      .map((i) => (0 until numberCities)
+        .map((j) => distanceStrategy.computeDistance(i, j, nodePtr)).toVector).toVector
   }
 
 }

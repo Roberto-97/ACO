@@ -1,16 +1,17 @@
 package Main
 
-import Alg.AcoMasterSlave
+import Alg.AcoColonies
 import Util.Conf
 import org.apache.spark.{SparkConf, SparkContext}
 
-object MainMasterSlave {
+object MainColonies {
 
   def main(args: Array[String]): Unit = {
     val ep = new Conf(args).build
+    ep.isColonies = 1
     val sparkConf = new SparkConf().setAppName("aco-spark")
     val sc = new SparkContext(sparkConf)
-    new AcoMasterSlave().run(ep, Option(sc))
+    new AcoColonies().run(ep, Option(sc))
   }
 
 }

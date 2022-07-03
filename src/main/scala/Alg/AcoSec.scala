@@ -1,0 +1,4 @@
+package Alg
+
+class AcoSec {
+}

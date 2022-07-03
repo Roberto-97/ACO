@@ -1,16 +1,16 @@
 package Entities.DistanceStrategies
 
-import Entities.Tsp.nodeptr
+import Entities.Point
 
-class GeoDistance extends DistanceStrategies {
+class GeoDistance extends DistanceStrategies with Serializable {
 
   private val M_PI = 3.14159265358979323846264
 
-  override def computeDistance(i: Int, j: Int): Int = {
-    val x1 = nodeptr(i).x
-    val x2 = nodeptr(j).x
-    val y1 = nodeptr(i).y
-    val y2 = nodeptr(j).y
+  override def computeDistance(i: Int, j: Int, nodePtr: Vector[Point]): Int = {
+    val x1 = nodePtr(i).x
+    val x2 = nodePtr(j).x
+    val y1 = nodePtr(i).y
+    val y2 = nodePtr(j).y
 
     var deg = x1.toInt.toDouble
     var min = x1 - deg
